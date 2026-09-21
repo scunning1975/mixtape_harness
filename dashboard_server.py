@@ -2417,7 +2417,7 @@ nav .group-map { color:#c4b5fd; }
 nav .group-checklist { color:#fbbf24; }
 nav .group-evidence { color:#34d399; }
 nav .group-machinery { color:#60a5fa; }
-.cassette { display:block; width:max-content; max-width:100%; margin:0 auto 1.4rem; font-family:ui-monospace, Menlo, monospace; line-height:1.05; color:var(--accent); font-size:0.8rem; white-space:pre; overflow-x:auto; text-align:left; }
+.cassette { display:block; width:max-content; max-width:100%; margin:0 auto 1.4rem; font-family:ui-monospace, Menlo, monospace; line-height:1.05; color:var(--accent); font-size:clamp(0.9rem,2vw,1.5rem); white-space:pre; overflow-x:auto; text-align:left; }
 
 /* Per-analysis checklist tab */
 .checklist-tab { padding:0.2rem 0; }
@@ -4010,12 +4010,11 @@ CASSETTE_ART = "╭────────────────────�
 
 
 def render_home():
-    """The Home landing (git projects only). TWO things, in order: (1) the verification-debt
-    scale — you cannot arrive without seeing the debt; (2) the "Today" to-do card beneath it
-    (which stage + what's left today, from TODAY.md, written by /amnesia). The four layer
-    launch-cards were dropped (Scott, 2026-07-09) — the sidebar already navigates. The scale
-    is the SAME render_scale() markup (identical element IDs), so the Diffs tab's live
-    refreshScale() re-weighs it here too; this is the only place the scale renders."""
+    """The Home landing (git projects only). Just the enlarged cassette (the harness's face),
+    with the "Today" to-do card beneath it (which stage + what's left today, from TODAY.md,
+    written by /amnesia). The verification-debt scale used to render here too but was moved
+    to the Diffs tab (Scott, 2026-09-20) — home is now just the mixtape image. The scale still
+    lives on the Diffs tab, where refreshScale() weighs it."""
     # "Today" card — written by /amnesia each run (TODAY.md at the project root): which stage
     # we're in + what's left to do today. Rendered just below the scale. Absent-safe: if there's
     # no TODAY.md, the card is omitted.
@@ -4080,25 +4079,12 @@ def render_home():
             f'<span style="font-weight:400;">click a box to cross it off</span></div>'
             f'<ul style="margin:0;padding:0;font-size:0.9rem;line-height:1.45;">{left_html}</ul></div>')
     return (
-        f'<div style="max-width:900px;margin:0 auto;">'
-        # (0) The cassette — the harness's face. Verbatim ASCII art, monospace, centered.
+        f'<div style="max-width:1000px;margin:0 auto;">'
+        # The cassette — the harness's face, now enlarged and standing alone. The
+        # verification-debt scale that used to sit here was moved to the Diffs tab
+        # (Scott, 2026-09-20): home is just the mixtape image.
         f'<pre class="cassette">{CASSETTE_ART}</pre>'
-        # (1) The scale, first. The whole box is a shortcut to the Diffs tab, with an explicit
-        # button below for the same jump (Scott, 2026-07-09).
-        f'<div onclick="show(\'diffs\')" title="Go to the Diffs tab to review commits" '
-        f'style="cursor:pointer;border:1px solid var(--border);border-radius:14px;background:var(--surface);'
-        f'padding:1.4rem 1.5rem 1.8rem;margin-bottom:1.4rem;transition:transform .12s,box-shadow .12s,border-color .12s;" '
-        f'onmouseover="this.style.transform=\'translateY(-3px)\';this.style.boxShadow=\'0 10px 28px rgba(0,0,0,.16)\';this.style.borderColor=\'var(--accent)\';" '
-        f'onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\';this.style.borderColor=\'var(--border)\';">'
-        f'<div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);'
-        f'text-align:center;margin-bottom:0.6rem;">Where you always land &middot; click to review the diffs</div>'
-        f'{render_scale()}'
-        f'<div style="text-align:center;margin-top:1.2rem;">'
-        f'<button onclick="event.stopPropagation();show(\'diffs\')" '
-        f'style="padding:0.6rem 1.4rem;border:none;border-radius:9px;background:var(--accent);color:#fff;'
-        f'font-size:0.85rem;font-weight:700;cursor:pointer;">Review the diffs &rarr;</button></div>'
-        f'</div>'
-        # (2) Today's to-do, below the scale.
+        # Today's to-do, from TODAY.md, kept below the image.
         f'{today_html}'
         f'</div>')
 
