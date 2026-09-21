@@ -4256,6 +4256,10 @@ def render_skills_hooks():
     self-contained CSS/JS scoped under #v-skills_hooks so it never collides with the
     shared dashboard. Added 2026-08-23 (Scott)."""
     SKILLS = [
+        {"icon": "\U0001F6AA", "cmd": "/r1", "name": "R1 · Name the Experiment", "color": "#f59e0b",
+         "tag": "Rubin's front door",
+         "front": "Interview-based (3 questions, one follow-up max) that draws the hypothetical randomized experiment <i>out of you</i> — the manipulable treatment, the outcome, and the lost randomization — the way Rubin means it. No lecturing; it asks, you answer.",
+         "back": "Produces three flippable cards in order: <b>the experiment</b> → <b>research design</b> (DiD / synth / IV / RDD / unconfoundedness, read off how treatment was assigned) → <b>target parameter</b> (estimand + weighting, <i>constrained</i> by the design — ATT is the default, and DiD/synth can only give ATT). Grounded in Rubin (2008), “Design Trumps Analysis.”"},
         {"icon": "\U0001F50D", "cmd": "/referee2", "name": "Referee 2", "color": "var(--accent)",
          "tag": "The adversarial audit",
          "front": "A fresh, hostile reviewer in a separate session — never the Claude that built the thing. Three modes: <b>deck</b> (rhetoric + visuals + compile), <b>code</b> (cross-language replication + econometric audit), <b>drift</b> (reconcile every sample N against the anchor).",
