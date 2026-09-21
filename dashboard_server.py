@@ -2418,6 +2418,8 @@ nav .group-checklist { color:#fbbf24; }
 nav .group-evidence { color:#34d399; }
 nav .group-machinery { color:#60a5fa; }
 .cassette { display:block; width:max-content; max-width:100%; margin:0 auto 1.4rem; font-family:ui-monospace, Menlo, monospace; line-height:1.05; color:var(--accent); font-size:clamp(0.9rem,2vw,1.5rem); white-space:pre; overflow-x:auto; text-align:left; }
+.bigscale { transition:transform .14s, box-shadow .14s, border-color .14s; }
+.bigscale:hover { transform:translateY(-3px); box-shadow:0 12px 30px rgba(0,0,0,.18); border-color:var(--accent) !important; }
 
 /* Per-analysis checklist tab */
 .checklist-tab { padding:0.2rem 0; }
@@ -3351,6 +3353,13 @@ function openDiff(i) {
   document.getElementById('diff-overlay').classList.add('open');
   showDiffModal();
 }
+// Jump to "what's open" — the first unreviewed commit (the verification debt). If everything
+// is reviewed, just open the newest so the click always does something.
+function goToOpen() {
+  if (!DIFF_COMMITS.length) return;
+  var idx = DIFF_COMMITS.findIndex(function(c){ return !c.reviewed; });
+  openDiff(idx < 0 ? 0 : idx);
+}
 function closeDiff() { document.getElementById('diff-overlay').classList.remove('open'); }
 function stepDiffModal(dir) {
   DIFF_CUR = Math.max(0, Math.min(DIFF_COMMITS.length - 1, DIFF_CUR + dir));
@@ -4079,13 +4088,12 @@ def render_home():
             f'<span style="font-weight:400;">click a box to cross it off</span></div>'
             f'<ul style="margin:0;padding:0;font-size:0.9rem;line-height:1.45;">{left_html}</ul></div>')
     return (
-        f'<div style="max-width:1000px;margin:0 auto;">'
-        # The cassette — the harness's face, now enlarged and standing alone. The
-        # verification-debt scale that used to sit here was moved to the Diffs tab
-        # (Scott, 2026-09-20): home is just the mixtape image.
+        f'<div style="max-width:1000px;margin:0 auto;min-height:78vh;display:flex;'
+        f'align-items:center;justify-content:center;">'
+        # The cassette — the harness's face, standing completely alone. Both the Today
+        # card and the verification-debt scale were removed from home (Scott, 2026-09-20);
+        # the scale now lives (big, clickable) on the Diffs tab.
         f'<pre class="cassette">{CASSETTE_ART}</pre>'
-        # Today's to-do, from TODAY.md, kept below the image.
-        f'{today_html}'
         f'</div>')
 
 
@@ -4105,10 +4113,18 @@ def render_diffs():
     grid = (
         # Sticky scale ICON — the actual tilting beam, visible WITHOUT leaving the tab.
         # Its own ids (diff-scale-*) so refreshScale() can tilt this copy AND the Home one.
-        '<div id="diff-scale" style="position:sticky;top:0;z-index:5;display:flex;align-items:center;'
-        'gap:0.9rem;padding:0.5rem 0.9rem;margin-bottom:0.7rem;border:1px solid var(--border);'
-        'border-radius:10px;background:var(--surface2);">'
-        '<svg viewBox="0 0 400 200" style="width:88px;height:44px;flex-shrink:0;">'
+        # The BIG scale — the face of the Diffs tab. Click it to jump straight to what's
+        # open (the first unreviewed commit). Same beam id so refreshScale() tilts it live;
+        # scale-legend-prod/ver show total commits vs. reviewed on the two pans.
+        '<div style="display:flex;flex-direction:column;align-items:center;margin:0.2rem auto 1.4rem;">'
+        '<div class="bigscale" onclick="goToOpen()" title="Go to what\'s open — the first unreviewed commit" '
+        'style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.7rem;'
+        'padding:1.4rem 2.4rem 1.1rem;border:1px solid var(--border);border-radius:18px;background:var(--surface);">'
+        '<div id="diff-scale" style="display:flex;align-items:center;gap:1.7rem;">'
+        '<div style="text-align:center;min-width:3rem;">'
+        '<div id="scale-legend-prod" style="font-size:1.6rem;font-weight:700;color:var(--red);">&ndash;</div>'
+        '<div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;">commits</div></div>'
+        '<svg viewBox="0 0 400 200" style="width:230px;height:115px;flex-shrink:0;">'
         '<line x1="200" y1="26" x2="200" y2="172" stroke="var(--border)" stroke-width="6"/>'
         '<polygon points="168,172 232,172 200,196" fill="var(--muted)"/>'
         '<g id="diff-scale-beam" style="transform-origin:200px 44px;transition:transform .7s cubic-bezier(.34,1.4,.5,1);">'
@@ -4119,7 +4135,13 @@ def render_diffs():
         '<path d="M22,86 A38,38 0 0 0 98,86 Z" fill="rgba(248,113,113,0.15)" stroke="var(--red)" stroke-width="3"/>'
         '<path d="M302,86 A38,38 0 0 0 378,86 Z" fill="rgba(52,211,153,0.15)" stroke="var(--green)" stroke-width="3"/>'
         '</g></svg>'
-        '<span id="diff-scale-verdict" style="font-weight:600;font-size:0.8rem;">weighing…</span></div>'
+        '<div style="text-align:center;min-width:3rem;">'
+        '<div id="scale-legend-ver" style="font-size:1.6rem;font-weight:700;color:var(--green);">&ndash;</div>'
+        '<div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;">reviewed</div></div>'
+        '</div>'
+        '<span id="diff-scale-verdict" style="font-weight:600;font-size:0.95rem;text-align:center;">weighing…</span>'
+        '<span style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.09em;">click the scale &rarr; go to what\'s open</span>'
+        '</div></div>'
         '<div id="diff-counter" style="font-size:0.75rem;color:var(--muted);margin-bottom:0.6rem;">loading…</div>'
         '<div id="diff-grid" class="ds-grid"></div>')
     # Fullscreen flip modal — reuses .ds-overlay / .ds-modal / .ds-flip / .fig-nav from the

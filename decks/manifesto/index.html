@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design Trumps Analysis — a Harness Manifesto</title>
+<style>
+  :root{
+    --bg:#0d1014; --bg2:#141922; --ink:#eef2f6; --muted:#9aa7b4;
+    --line:#26303c; --amber:#f0b45e; --amber-soft:rgba(240,180,94,.14);
+    --green:#4ade80; --green-soft:rgba(74,222,128,.13);
+    --red:#f87171; --red-soft:rgba(248,113,113,.12);
+    --blue:#7cc4ff;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:var(--serif);
+    overflow:hidden;-webkit-font-smoothing:antialiased}
+  .deck{position:fixed;inset:0}
+  .slide{position:absolute;inset:0;display:flex;flex-direction:column;
+    justify-content:center;align-items:center;padding:6vh 8vw;
+    opacity:0;visibility:hidden;transform:translateX(40px) scale(.99);
+    transition:opacity .5s ease,transform .5s ease,visibility .5s;
+    text-align:center}
+  .slide.active{opacity:1;visibility:visible;transform:none}
+  .slide.prev{transform:translateX(-40px) scale(.99)}
+  .kicker{font-family:var(--mono);font-size:.8rem;letter-spacing:.28em;
+    text-transform:uppercase;color:var(--amber);margin-bottom:1.6rem;opacity:.9}
+  h1{font-size:clamp(2.2rem,5.4vw,4.2rem);line-height:1.04;font-weight:600;
+    letter-spacing:-.01em;max-width:16ch}
+  h2{font-size:clamp(1.7rem,3.9vw,3rem);line-height:1.1;font-weight:600;
+    letter-spacing:-.01em;max-width:20ch}
+  .lede{font-size:clamp(1.05rem,1.9vw,1.5rem);color:var(--muted);
+    max-width:34ch;line-height:1.5;margin-top:1.5rem;font-style:italic}
+  .sub{font-size:clamp(1rem,1.7vw,1.35rem);color:var(--muted);
+    max-width:40ch;line-height:1.5;margin-top:1.4rem}
+  .big{font-size:clamp(3rem,9vw,7rem);font-weight:700;letter-spacing:-.02em;
+    line-height:1;font-variant-numeric:tabular-nums}
+  .amber{color:var(--amber)} .green{color:var(--green)} .red{color:var(--red)}
+  .blue{color:var(--blue)} .m{font-family:var(--mono)}
+  .byline{margin-top:2.4rem;font-family:var(--mono);font-size:.9rem;
+    color:var(--muted);letter-spacing:.04em}
+  .cassette{font-family:var(--mono);font-size:clamp(.42rem,1.15vw,.82rem);
+    line-height:1.15;color:var(--amber);white-space:pre;text-align:left;
+    filter:drop-shadow(0 8px 30px rgba(240,180,94,.10))}
+  blockquote{font-size:clamp(1.4rem,3.2vw,2.5rem);line-height:1.28;
+    max-width:20ch;font-weight:500;position:relative}
+  blockquote .qm{color:var(--amber);opacity:.5}
+  cite{display:block;margin-top:1.6rem;font-size:1rem;color:var(--muted);
+    font-style:normal;font-family:var(--mono);letter-spacing:.03em}
+  /* wall diagram */
+  .wall{display:flex;align-items:stretch;gap:0;margin-top:2.5rem;
+    width:min(880px,92vw);height:150px;font-family:var(--mono)}
+  .wall .side{flex:1;display:flex;flex-direction:column;justify-content:center;
+    gap:.5rem;padding:1.1rem;border:1px solid var(--line);border-radius:12px}
+  .wall .design{background:var(--amber-soft);border-color:var(--amber)}
+  .wall .analysis{background:var(--bg2)}
+  .wall .barrier{width:8px;background:repeating-linear-gradient(45deg,
+    var(--amber) 0 6px,transparent 6px 12px);margin:0 14px;border-radius:4px}
+  .wall .lab{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+  .wall .val{font-size:1rem;color:var(--ink)}
+  /* generic table */
+  table{border-collapse:collapse;font-family:var(--mono);margin-top:2rem;
+    font-size:clamp(.62rem,1.25vw,.98rem);width:min(1000px,94vw)}
+  th,td{border:1px solid var(--line);padding:.55rem .7rem;text-align:left}
+  th{color:var(--amber);font-weight:600;letter-spacing:.04em;font-size:.82em;
+    text-transform:uppercase;background:var(--bg2)}
+  td:first-child{color:var(--muted)}
+  tr.bite td{background:var(--amber-soft)}
+  tr.bite td:first-child{color:var(--amber);font-weight:700}
+  /* cards row */
+  .cards{display:flex;gap:1.2rem;margin-top:2.4rem;flex-wrap:wrap;
+    justify-content:center;width:min(1050px,95vw)}
+  .card{flex:1 1 260px;max-width:320px;border:1px solid var(--line);
+    border-radius:14px;background:var(--bg2);padding:1.4rem 1.3rem;text-align:left;
+    border-top:3px solid var(--red)}
+  .card .tag{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--red);margin-bottom:.7rem}
+  .card h3{font-size:1.15rem;line-height:1.25;margin-bottom:.5rem;font-weight:600}
+  .card p{font-size:.92rem;color:var(--muted);line-height:1.45}
+  /* ladder / bite */
+  .ladder{display:flex;flex-direction:column;gap:.5rem;margin-top:2rem;
+    font-family:var(--mono);width:min(560px,90vw)}
+  .rung{display:flex;justify-content:space-between;align-items:center;
+    padding:.7rem 1.1rem;border:1px solid var(--line);border-radius:10px;
+    background:var(--bg2)}
+  .rung .k{color:var(--muted);font-size:.9rem}
+  .rung .v{font-size:1.15rem;font-weight:600}
+  /* stack */
+  .stack{display:flex;flex-direction:column;gap:.55rem;margin-top:2rem;
+    width:min(720px,92vw);font-family:var(--mono)}
+  .layer{display:flex;align-items:center;gap:1rem;padding:.8rem 1.2rem;
+    border:1px solid var(--line);border-radius:11px;background:var(--bg2);text-align:left}
+  .layer .n{color:var(--amber);font-weight:700;flex:0 0 auto;width:1.6rem}
+  .layer .t{font-size:1rem}
+  .layer .d{color:var(--muted);font-size:.86rem;margin-left:auto;text-align:right}
+  /* traffic pips */
+  .pips{display:flex;gap:1.5rem;margin-top:2.2rem;font-family:var(--mono);
+    flex-wrap:wrap;justify-content:center}
+  .pip{display:flex;align-items:center;gap:.6rem;font-size:.95rem}
+  .dot{width:.85rem;height:.85rem;border-radius:50%}
+  .dot.g{background:var(--green)} .dot.a{background:var(--amber)} .dot.r{background:var(--red)}
+  .bites{display:flex;gap:2.4rem;margin-top:2.2rem;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  .bites .col{text-align:left}
+  .bites .paper{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:.6rem}
+  /* chrome */
+  .chrome{position:fixed;bottom:1.4rem;left:0;right:0;display:flex;
+    justify-content:space-between;align-items:center;padding:0 1.6rem;
+    font-family:var(--mono);font-size:.72rem;color:var(--muted);
+    letter-spacing:.1em;pointer-events:none;z-index:10}
+  .progress{position:fixed;top:0;left:0;height:3px;background:var(--amber);
+    transition:width .5s ease;z-index:11;box-shadow:0 0 12px var(--amber)}
+  .navhint{opacity:.6}
+  .dots{display:flex;gap:.4rem;pointer-events:auto}
+  .nd{width:7px;height:7px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .nd.on{background:var(--amber);transform:scale(1.35)}
+  .tapehint{position:fixed;top:1.3rem;right:1.6rem;font-family:var(--mono);
+    font-size:.66rem;letter-spacing:.2em;color:var(--muted);opacity:.6;z-index:10}
+</style>
+</head>
+<body>
+<div class="progress" id="prog"></div>
+<div class="tapehint">▷ SIDE A</div>
+<div class="deck" id="deck">
+
+  <!-- 1 · TITLE -->
+  <section class="slide active">
+    <pre class="cassette">╭──────────────────────────────────────────────────────╮
+│ ┌──────────────────────────────────────────────────┐ │
+│ │ M I X T A P E   H A R N E S S      [ 90 ]        │ │
+│ │ ················································ │ │
+│ │ a research operating system       SIDE A         │ │
+│ └──────────────────────────────────────────────────┘ │
+│                                                      │
+│      .-------.      ________      .-------.          │
+│     | / . . \ |    /::::::::::\    | / . . \ |       │
+│     |  (( o ))  |  |::::::::::::|  |  (( o ))  |     │
+│     | \ . . / |    \::::::::::/    | \ . . / |       │
+│      '-------'      '''''''''''      '-------'       │
+│ ==================================================== │
+│  (o)                                            (o)  │
+╰──────────────────────────────────────────────────────╯</pre>
+    <h1 style="margin-top:2.2rem">Design Trumps Analysis</h1>
+    <div class="lede">and a harness to make me live by it</div>
+    <div class="byline">Scott Cunningham · a manifesto</div>
+  </section>
+
+  <!-- 2 · THE CLAIM -->
+  <section class="slide">
+    <div class="kicker">The claim</div>
+    <h2>Objective causal inference is <span class="amber">built at the design stage</span> — before you ever see the outcome.</h2>
+    <div class="sub">Not recovered later by a clever regression. Manufactured up front, by refusing to look.</div>
+  </section>
+
+  <!-- 3 · RUBIN QUOTE -->
+  <section class="slide">
+    <div class="kicker">Rubin · 2008</div>
+    <blockquote><span class="qm">“</span>Final outcome data cannot be used in design without compromising the objectivity of the study design.<span class="qm">”</span></blockquote>
+    <cite>Donald B. Rubin — “For Objective Causal Inference, Design Trumps Analysis”</cite>
+  </section>
+
+  <!-- 4 · WHY BLINDNESS = OBJECTIVITY -->
+  <section class="slide">
+    <div class="kicker">Why blindness is objectivity</div>
+    <h2>A randomized experiment can't be <span class="amber">tuned</span>. An observational study inherits that trust only by hiding the outcome.</h2>
+    <div class="wall">
+      <div class="side design">
+        <div class="lab">Design — outcomes hidden</div>
+        <div class="val">name the experiment · assignment · balance · the bite</div>
+      </div>
+      <div class="barrier" title="the wall"></div>
+      <div class="side analysis">
+        <div class="lab">Analysis — outcomes revealed</div>
+        <div class="val">estimate the effect · last, and least</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · IMBENS LINEAGE -->
+  <section class="slide">
+    <div class="kicker">The lineage</div>
+    <h2>Rubin's creed, made operational by <span class="amber">Imbens</span></h2>
+    <div class="stack">
+      <div class="layer"><span class="n">'04</span><span class="t">Estimation under unconfoundedness</span><span class="d">overlap · propensity · matching</span></div>
+      <div class="layer"><span class="n">'15</span><span class="t">Imbens &amp; Rubin — the assignment mechanism first</span><span class="d">the design-stage textbook</span></div>
+      <div class="layer"><span class="n">'24</span><span class="t">Imbens &amp; Xu — LaLonde, four decades on</span><span class="d">when design earns the causal claim</span></div>
+    </div>
+    <div class="sub">Three decades of one idea: the design is the science.</div>
+  </section>
+
+  <!-- 6 · WHAT I'VE WRITTEN -->
+  <section class="slide">
+    <div class="kicker">What I've already written</div>
+    <h2>My book's end-of-chapter guides <span class="amber">are</span> this creed — four designs, one outcome-blind ritual.</h2>
+    <table>
+      <tr><th>Rubin's stage</th><th>Unconfound.</th><th>RDD</th><th>IV</th><th>DiD</th></tr>
+      <tr><td>name the experiment</td><td>pick estimand</td><td>cutoff + running var</td><td>assignment mech.</td><td>target + timing</td></tr>
+      <tr class="bite"><td>the assignment — BITE</td><td>propensity score</td><td>P(treat) jumps</td><td>first stage Z→D</td><td>first-stage shock</td></tr>
+      <tr><td>balance, outcome-blind</td><td>overlap / trim</td><td>McCrary + smoothness</td><td>effective-F / AR</td><td>parallel pre-trends</td></tr>
+      <tr><td>refuse if no overlap</td><td>drop off-support</td><td>placebo cutoffs</td><td>reduced form</td><td>falsification</td></tr>
+      <tr><td>analyze last</td><td>ATT</td><td>the jump</td><td>OLS vs IV</td><td>robust estimator</td></tr>
+    </table>
+  </section>
+
+  <!-- 7 · BITE -->
+  <section class="slide">
+    <div class="kicker">The row that matters</div>
+    <h2><span class="amber">Bite</span> — the first stage. Proof the treatment moved something real, shown <em>before</em> the outcome.</h2>
+    <div class="sub">Same object in every design. Turn the bite off, the effect vanishes. No bite, no interpretable study.</div>
+  </section>
+
+  <!-- 8 · GREAT PAPERS -->
+  <section class="slide">
+    <div class="kicker">Great papers live by it</div>
+    <h2>And they are <span class="amber">stronger</span> for it</h2>
+    <div class="bites">
+      <div class="col">
+        <div class="paper">Cengiz · Dube · Lindner · Zipperer</div>
+        <div class="big amber">6.8%</div>
+        <div class="sub" style="margin-top:.6rem">wage bite — the first stage the whole elasticity rests on <span class="m">(s.e. 1.0)</span></div>
+      </div>
+      <div class="col">
+        <div class="paper">Miller · Johnson · Wherry</div>
+        <div class="ladder" style="margin-top:.2rem">
+          <div class="rung"><span class="k">eligibility</span><span class="v amber">+50pp</span></div>
+          <div class="rung"><span class="k">enrollment</span><span class="v amber">+12.8pp</span></div>
+          <div class="rung"><span class="k">uninsured</span><span class="v amber">−4.4pp</span></div>
+        </div>
+        <div class="sub" style="margin-top:.6rem">a coverage ladder — bite as a first stage you can watch</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 · THE PERSONAL TURN -->
+  <section class="slide">
+    <div class="kicker">Then something changed</div>
+    <h2>My <span class="amber">new</span> projects were where it broke.</h2>
+    <div class="sub">Old projects I picked up — I knew those cold. But a new project is <em>built</em> by the checklist, step by step. That's the discipline agents quietly eroded.</div>
+  </section>
+
+  <!-- 10 · THE PSYCHOLOGY -->
+  <section class="slide">
+    <div class="kicker">The psychology of it</div>
+    <h2>The agent severed <span class="amber">production</span> from <span class="amber">verification</span> — and from understanding.</h2>
+    <div class="sub">200 lines in one shot. I approved work I hadn't produced and didn't fully hold. Little things kept breaking down.</div>
+  </section>
+
+  <!-- 11 · THE STUNNERS -->
+  <section class="slide">
+    <div class="kicker">The ones that stunned me</div>
+    <h2>I caught these. <span class="red">What are the odds they were the only ones?</span></h2>
+    <div class="cards">
+      <div class="card"><div class="tag">fabrication</div><h3>Made-up data on a slide</h3><p>It synthesized a series for a deck figure — real-looking, footnoted, false.</p></div>
+      <div class="card"><div class="tag">off the books</div><h3>A figure drawn in bash</h3><p>Plotted inline, no script saved. No producer file — unre-runnable, untraceable.</p></div>
+      <div class="card"><div class="tag">silent drift</div><h3>99 times it obeyed…</h3><p>…my markdown rule. Then, once, it didn't. Confidently. No warning.</p></div>
+    </div>
+  </section>
+
+  <!-- 12 · QUIETER LOSSES -->
+  <section class="slide">
+    <div class="kicker">Two quieter losses</div>
+    <h2>I couldn't find <span class="amber">what produced what</span>. And it never became <span class="amber">muscle memory</span>.</h2>
+    <div class="sub">My old workflow built a felt sense of the work — where every number came from. This one didn't stick.</div>
+  </section>
+
+  <!-- 13 · SO -->
+  <section class="slide">
+    <div class="kicker">So I wanted</div>
+    <h2 style="max-width:24ch">something <span class="amber">visual</span>, <span class="amber">systematic</span>, <span class="amber">organized</span> — and a little bit <span class="amber">gamified</span>.</h2>
+    <div class="sub">Not to hand the work to the machine. To get myself back into it.</div>
+  </section>
+
+  <!-- 14 · THE HARNESS -->
+  <section class="slide">
+    <div class="kicker">The harness</div>
+    <h2>Rubin's discipline, turned into <span class="amber">machinery</span></h2>
+    <div class="stack">
+      <div class="layer"><span class="n">§</span><span class="t">The law — <span class="m">CLAUDE.md</span></span><span class="d">zero error as a constraint, not a goal</span></div>
+      <div class="layer"><span class="n">▦</span><span class="t">Stages as canisters — re-enterable rooms</span><span class="d">every step survives the amnesia</span></div>
+      <div class="layer"><span class="n">◉</span><span class="t">Live dashboard — staleness &amp; drift in color</span><span class="d">verification made continuous</span></div>
+      <div class="layer"><span class="n">▷</span><span class="t">Bite first · outcome last</span><span class="d">outcome-blindness, by construction</span></div>
+    </div>
+    <div class="pips">
+      <div class="pip"><span class="dot g"></span>done — locked</div>
+      <div class="pip"><span class="dot a"></span>you are here</div>
+      <div class="pip"><span class="dot r"></span>open</div>
+    </div>
+  </section>
+
+  <!-- 15 · CLOSE -->
+  <section class="slide">
+    <div class="kicker">The whole point</div>
+    <blockquote style="max-width:24ch">A machine that keeps the outcome <span class="amber">“not available at this stage”</span> — on purpose. The way randomization does it for free.</blockquote>
+    <div class="sub">Even when the agent offers to skip ahead.</div>
+    <div class="byline">mixtape_harness · design &gt; analysis</div>
+  </section>
+
+</div>
+
+<div class="chrome">
+  <div class="dots" id="dots"></div>
+  <div class="navhint">← → or space · F fullscreen</div>
+  <div id="count">01 / 15</div>
+</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  const dotsWrap=document.getElementById('dots');
+  const prog=document.getElementById('prog');
+  const count=document.getElementById('count');
+  let i=0;
+  slides.forEach((_,k)=>{const d=document.createElement('div');d.className='nd';
+    d.onclick=()=>go(k);dotsWrap.appendChild(d);});
+  const dots=[...document.querySelectorAll('.nd')];
+  function pad(n){return String(n).padStart(2,'0');}
+  function go(n){
+    n=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>{s.classList.remove('active','prev');
+      if(k<n)s.classList.add('prev');});
+    slides[n].classList.add('active');
+    dots.forEach((d,k)=>d.classList.toggle('on',k===n));
+    prog.style.width=((n)/(slides.length-1)*100)+'%';
+    count.textContent=pad(n+1)+' / '+pad(slides.length);
+    i=n;
+  }
+  function next(){go(i+1);} function prev(){go(i-1);}
+  document.addEventListener('keydown',e=>{
+    if(['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)){e.preventDefault();next();}
+    else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();prev();}
+    else if(e.key==='Home')go(0); else if(e.key==='End')go(slides.length-1);
+    else if(e.key.toLowerCase()==='f'){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();}
+  });
+  document.addEventListener('click',e=>{if(e.target.closest('.nd'))return;
+    const x=e.clientX/window.innerWidth; x>0.5?next():prev();});
+  go(0);
+</script>
+</body>
+</html>
