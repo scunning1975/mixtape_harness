@@ -1,0 +1,48 @@
+{
+  "_comment": "Hook registrations for the five hardened guardrails shipped in this project's hooks/ dir. Merge the \"hooks\" block below into your Claude Code settings.json (project .claude/settings.json or the user-level ~/.claude/settings.json). $CLAUDE_PROJECT_DIR resolves to the project root at runtime, so the paths stay generic and portable. PreToolUse guardrails: protect-raw-data blocks writes into data/raw/, no-fabricated-exhibit blocks fabricated figure/table scripts (on Edit/Write and on Bash-run scripts), no-offbook-exhibit blocks drawing a figure/table inline in a shell. PostToolUse guardrails: deck-from-pipeline blocks decking an exhibit no wired script produces, no-stale-canon warns when a stage's canon-closure line references an exhibit that isn't right-and-live.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/hooks/protect-raw-data.py\""
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/hooks/no-fabricated-exhibit.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/hooks/no-fabricated-exhibit.py\""
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/hooks/no-offbook-exhibit.py\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/hooks/deck-from-pipeline.py\""
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/hooks/no-stale-canon.py\""
+          }
+        ]
+      }
+    ]
+  }
+}

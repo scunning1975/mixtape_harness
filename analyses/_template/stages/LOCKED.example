@@ -1,0 +1,20 @@
+# LOCKED — the stage-lock marker
+
+# HOW STAGE COLORS WORK (the "You Are Here" model): a stage's grid color IS its lock state.
+#   GREEN = done   — the stage folder contains a file literally named `LOCKED`
+#   AMBER = active — the stage named in the analysis's ACTIVE_STAGE file (the ONE room you're in)
+#   RED   = open   — everything else (not locked, not active)
+#
+# TO CLOSE A STAGE: drop a file named `LOCKED` into that stage folder
+#   e.g.  echo "closed 2026-01-15: joint sign-off" > analyses/<slug>/stages/02_assignment/LOCKED
+#   → the cell turns green.
+#
+# TO REOPEN A STAGE for more work ("surgery"): delete its LOCKED file
+#   → the cell leaves green; if it's also your ACTIVE_STAGE it reads amber ("You Are Here").
+#
+# THE RULE: to WORK a stage you UNLOCK it. To MOVE ON, LOCK the room you're leaving and point
+# ACTIVE_STAGE at the next. Only ever ONE amber (active) stage at a time. Sign-off (S_signoff) is just
+# the last stage — locking it means the whole analysis is done.
+#
+# This file is a `.example` so it does NOT itself lock anything. Copy it to a bare `LOCKED` (any content,
+# or empty) inside a stage folder when you close that stage.
