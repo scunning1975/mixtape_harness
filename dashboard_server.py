@@ -4092,6 +4092,45 @@ def render_diffs():
         'padding:1.5rem 1.5rem 1.7rem;margin-bottom:1.3rem;">'
         + render_scale() +
         '</div>'
+        # UNDER CONSTRUCTION panel (Scott, 2026-09-23). This tab is the least settled part of
+        # the harness, so it says so out loud, and says what it is trying to be: the place where
+        # the acceptance step that git assumes — but that agentic work breaks — gets put back.
+        # Collapsed by default so it does not crowd the commits; the summary row is the toggle.
+        '<details style="border:1px solid var(--yellow);border-radius:12px;background:var(--surface2);'
+        'margin-bottom:1.2rem;">'
+        '<summary style="cursor:pointer;padding:0.7rem 1rem;font-size:0.8rem;font-weight:700;'
+        'color:var(--yellow);list-style:none;">&#9888;&#65039; Under construction &mdash; what this tab '
+        '<span style="font-weight:400;color:var(--muted);">is for, and what it does not do yet</span></summary>'
+        '<div style="padding:0 1.3rem 1.2rem;font-size:0.85rem;line-height:1.65;color:var(--text);">'
+
+        '<p style="margin:0 0 0.9rem;"><b>The goal.</b> Every change to this project gets read by a '
+        'person, one bounded diff at a time, and the fact that it was read gets written down.</p>'
+
+        '<p style="margin:0 0 0.9rem;"><b>How git normally handles this.</b> You edit, run '
+        '<code>git diff</code> to read what changed, stage what you want, and commit. The reading '
+        'happens <i>before</i> the commit &mdash; the commit <i>is</i> the acceptance. Nothing needs '
+        'tracking afterward, because the person who wrote the change is the person who approved it. '
+        'Git has no separate review step because, historically, it never needed one.</p>'
+
+        '<p style="margin:0 0 0.9rem;"><b>Why that assumption breaks here.</b> When an agent writes '
+        'the code and commits it, the writer and the approver are no longer the same person. The '
+        'commit still gets made, but it no longer carries the meaning it used to: nobody has '
+        'necessarily read anything. This is a principal&ndash;agent problem. The agent produces far '
+        'faster than the principal can verify, and the receipt that used to certify acceptance keeps '
+        'being issued regardless.</p>'
+
+        '<p style="margin:0 0 0.9rem;"><b>What this tab does today.</b> It reads committed history '
+        '(<code>git log</code>, <code>git show</code> &mdash; local only, no network) and keeps its own '
+        'ledger of which commits you have marked reviewed. The scale above weighs commits made '
+        'against commits read. Git itself is never written to.</p>'
+
+        '<p style="margin:0 0 0.9rem;"><b>Known gap.</b> Only committed history appears here. If an '
+        'agent edits files and does not commit, this tab shows nothing &mdash; the working tree is '
+        'invisible to it.</p>'
+
+        '<p style="margin:0;"><b>Open question.</b> Whether reviewing after the commit is the right '
+        'shape at all, or whether the acceptance step belongs before it, where git puts it.</p>'
+        '</div></details>'
         '<div id="diff-counter" style="font-size:0.75rem;color:var(--muted);margin-bottom:0.6rem;">loading…</div>'
         '<div id="diff-grid" class="ds-grid"></div>')
     # Fullscreen flip modal — reuses .ds-overlay / .ds-modal / .ds-flip / .fig-nav from the
