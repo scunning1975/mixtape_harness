@@ -4,9 +4,19 @@
 
 set -euo pipefail
 
-# The raw-data directory and its fingerprint file. Override RAW_DIR to seal
-# somewhere other than ./data/raw.
+# The raw-data directory and its fingerprint file. Each script may pass a
+# directory as its first positional argument; otherwise RAW_DIR, otherwise
+# ./data/raw. take_dir_arg() is called by the scripts after they strip flags.
 RAW_DIR="${RAW_DIR:-data/raw}"
+# NOTE the explicit "return 0": these scripts run under `set -e`, and a bare call
+# whose last test fails (no argument given) would otherwise kill the script.
+take_dir_arg() {
+  if [ -n "${1:-}" ] && [ -d "$1" ]; then
+    RAW_DIR="$1"
+    MANIFEST="${RAW_DIR%/}.manifest.sha256"
+  fi
+  return 0
+}
 MANIFEST="${MANIFEST:-${RAW_DIR%/}.manifest.sha256}"
 
 die() { printf '%s\n' "ERROR: $*" >&2; exit 1; }

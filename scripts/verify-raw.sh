@@ -20,6 +20,8 @@
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/_raw_common.sh"
 
+take_dir_arg "${1:-}"
+
 [ -d "$RAW_DIR" ]   || die "no such directory: $RAW_DIR"
 [ -f "$MANIFEST" ]  || die "no manifest at $MANIFEST — run scripts/seal-raw.sh first."
 

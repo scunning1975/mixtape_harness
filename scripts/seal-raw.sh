@@ -28,7 +28,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/_raw_common.sh"
 
 HARD=0
-[ "${1:-}" = "--hard" ] && HARD=1
+if [ "${1:-}" = "--hard" ]; then HARD=1; shift; fi
+take_dir_arg "${1:-}"
 
 [ -d "$RAW_DIR" ] || die "no such directory: $RAW_DIR (set RAW_DIR to point elsewhere)"
 
