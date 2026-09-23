@@ -20,12 +20,6 @@ from pathlib import Path
 from datetime import datetime
 from urllib.parse import urlparse, parse_qs
 
-# Path to the `claude` CLI used by the in-page chat panel. Adjust if yours lives elsewhere.
-CLAUDE_BIN = os.path.expanduser("~/.claude/local/claude")
-if not os.path.exists(CLAUDE_BIN):
-    import shutil as _shutil
-    CLAUDE_BIN = _shutil.which("claude") or CLAUDE_BIN
-
 ROOT = Path(os.getcwd())
 PORT = int(os.environ.get("PORT", 8080))
 
@@ -4152,57 +4146,6 @@ def render_diffs():
     return grid + modal
 
 
-def render_chat():
-    """The in-page Claude chat panel. Talks to the /api/chat SSE endpoint, which shells out to the `claude`
-    CLI in stream-json mode (cwd = this project), so Claude has full file access. Session id is held
-    client-side for multi-turn continuity via --resume. (Scott, 2026-07-28.)"""
-    return """
-    <div id="chatwrap" style="max-width:820px;margin:0 auto;">
-      <div id="chatlog" style="min-height:200px;"></div>
-      <div id="chatbar" style="position:sticky;bottom:0;display:flex;gap:8px;padding:12px 0;background:var(--bg,#fff);border-top:1px solid var(--border,#ddd);margin-top:12px;">
-        <input id="chatbox" placeholder="Ask Claude to do something in this project…" autofocus
-          style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border,#ccc);background:var(--surface,#fff);color:var(--ink,#111);font:15px sans-serif;">
-        <button id="chatsend" onclick="chatGo()"
-          style="padding:10px 18px;border:0;border-radius:8px;background:#1f6feb;color:#fff;font-weight:600;cursor:pointer;">Send</button>
-      </div>
-      <div id="chatsid" style="font-size:11px;color:var(--muted);margin-top:4px;"></div>
-    </div>
-    <style>
-      .cmsg{margin:10px 0;padding:10px 14px;border-radius:10px;white-space:pre-wrap;}
-      .cyou{background:#1f6feb18;border:1px solid #1f6feb44;}
-      .cclaude{background:var(--surface,#f6f8fa);border:1px solid var(--border,#d0d7de);}
-      .ctool{background:#7a5c0018;border:1px solid #7a5c0055;color:#8a6d00;font-size:13px;font-family:ui-monospace,monospace;}
-      .crole{font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.55;margin-bottom:4px;}
-    </style>
-    <script>
-    if(!window.chatSid) window.chatSid = "";
-    function chatAdd(cls, role){
-      const log=document.getElementById('chatlog');
-      const d=document.createElement('div'); d.className='cmsg '+cls;
-      d.innerHTML='<div class="crole">'+role+'</div><span class="cbody"></span>';
-      log.appendChild(d); d.scrollIntoView({block:'end'}); return d.querySelector('.cbody');
-    }
-    function chatGo(){
-      const box=document.getElementById('chatbox'), btn=document.getElementById('chatsend');
-      const text=box.value.trim(); if(!text) return;
-      chatAdd('cyou','you').textContent=text; box.value=''; btn.disabled=true;
-      const cur=chatAdd('cclaude','claude'); let acc="";
-      const es=new EventSource('/api/chat?sid='+encodeURIComponent(window.chatSid)+'&msg='+encodeURIComponent(text));
-      es.onmessage=(e)=>{const ev=JSON.parse(e.data);
-        if(ev.kind==='session'){window.chatSid=ev.sid;document.getElementById('chatsid').textContent='session '+ev.sid.slice(0,8);}
-        else if(ev.kind==='text'){acc+=ev.text;cur.textContent=acc;cur.scrollIntoView({block:'end'});}
-        else if(ev.kind==='tool'){chatAdd('ctool','tool · '+ev.name).textContent=ev.detail;}
-        else if(ev.kind==='done'){es.close();btn.disabled=false;box.focus();}
-        else if(ev.kind==='error'){cur.textContent='[error] '+ev.text;es.close();btn.disabled=false;}
-      };
-      es.onerror=()=>{es.close();btn.disabled=false;};
-    }
-    document.addEventListener('keydown',(e)=>{
-      if(e.key==='Enter'){const b=document.getElementById('chatbox');
-        if(b && document.activeElement===b){chatGo();}}
-    });
-    </script>"""
-
 
 def render_skills_hooks():
     """Skills & Hooks tab — a showable, flip-through index-card view of the harness.
@@ -4431,7 +4374,7 @@ def render_skills_hooks():
 
 
 def build_page(hypotheses, insights, decisions, pipeline, figures, code_files, data_entries):
-    # Grouped-spine dashboard. Base (non-git) tabs; git adds Home/Chat/Diffs.
+    # Grouped-spine dashboard. Base (non-git) tabs; git adds Home and Diffs.
     # Groups: The Map (Decks · Template), The Checklist (Checklist · Diffs),
     # The Evidence (Figures · Tables · Decisions), The Machinery (Code · Data · Skills & Hooks).
     tabs = [
@@ -4445,13 +4388,13 @@ def build_page(hypotheses, insights, decisions, pipeline, figures, code_files, d
         ("data", "Data"),
         ("skills_hooks", "Skills & Hooks"),
     ]
-    # Git projects land on a HOME tab (verification-debt scale + today's to-do), gain an in-page
-    # Chat tab, and gain a Diffs tab (the bounded diff as the unit of verification) — Diffs sits in
-    # The Checklist group, right after Checklist. Gated on a local .git dir so a non-git clone stays lean.
+    # Git projects land on a HOME tab (the cassette + today's to-do) and gain a Diffs tab (the
+    # bounded diff as the unit of verification) — Diffs sits in The Checklist group, right after
+    # Checklist. Gated on a local .git dir so a non-git clone stays lean. The in-page Chat tab was
+    # removed from the nav (Scott, 2026-09-23); you talk to Claude in the terminal, not here.
     _home = (ROOT / ".git").exists()
     if _home:
         tabs.insert(0, ("home", "Home"))
-        tabs.insert(1, ("chat", "Chat"))
         _cl_idx = next(i for i, (tid, _) in enumerate(tabs) if tid == "checklist_per_analysis")
         tabs[_cl_idx + 1:_cl_idx + 1] = [("diffs", "Diffs")]
     _default_tab = "home" if _home else "decks"
@@ -4489,7 +4432,6 @@ def build_page(hypotheses, insights, decisions, pipeline, figures, code_files, d
     _ph = 'color:var(--muted);font-size:0.85rem;line-height:1.6;max-width:60ch;padding:1.5rem;border:1px dashed var(--border);border-radius:8px;background:var(--surface);'
     views = f"""
     <div class="view{' active' if _home else ''}" id="v-home"><h2>Verification Debt</h2><p style="color:var(--muted);font-size:0.78rem;margin-bottom:1rem;">Where you always land. The scale weighs work <em>produced</em> (commits) against work <em>verified</em> (diffs you reviewed) — accept a diff in the Diffs tab and it settles live. Below it, today's to-do (from <code>TODAY.md</code>).</p>{render_home() if _home else ''}</div>
-    <div class="view" id="v-chat"><h2>Chat</h2><p style="color:var(--muted);font-size:0.78rem;margin-bottom:1rem;">A live Claude working in this project directory, with full file access. Type below; replies stream in. Yellow rows show tool actions (Read/Edit/Bash). The session remembers earlier turns. First message loads the project context (~30–60s).</p>{render_chat()}</div>
     <div class="view{'' if _home else ' active'}" id="v-decks"><h2>Decks</h2><p style="color:var(--muted);font-size:0.78rem;margin-bottom:1rem;">Self-contained HTML decks under <code>decks/html/</code>, embedded live and newest-first. Pick one from the rail; it renders in place.</p>{render_decks()}</div>
     <div class="view" id="v-narrative"><h2>Template</h2>{reorient_html}<p style="color:var(--muted);font-size:0.78rem;margin-bottom:1rem;">The research-appendix genre — the standing pattern the write-up follows. The empty form; no project findings.</p>{render_narrative(hypotheses, insights)}</div>
     <div class="view" id="v-checklist_per_analysis"><h2>Checklist</h2><p style="color:var(--muted);font-size:0.78rem;margin-bottom:1rem;">The methodological gate upstream of everything. <strong>Click an analysis row</strong> to open its stages and their exhibits in place — each figure/table flips from the exhibit to its description to the scrollable source code that made it (Esc backs out). Per-analysis grid + Step 0 package cards below. Every DiD analysis instantiates <code>analyses/&lt;slug&gt;/checklist.md</code> from the template — the AI invokes <code>/checklist</code> to walk Steps 0–11.</p>{render_checklist_per_analysis()}</div>
@@ -4579,11 +4521,6 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(fp.read_bytes())
             else:
                 self.send_error(404, f"Not found: {path}")
-        elif parsed.path == "/api/chat":
-            # In-page Claude: shell out to the `claude` CLI in stream-json mode, cwd = the ACTIVE project
-            # (captured locally here so a concurrent request switching ROOT can't yank it mid-stream).
-            # Stream events back as SSE.
-            self.handle_chat(qs, str(ROOT))
         elif parsed.path == "/api/git-log":
             # READ-ONLY commit list for the active project (newest first). Never writes.
             # Returns JSON [{hash, short, date, subject, reviewed}]; empty list if not a git repo.
@@ -4692,60 +4629,6 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             else:
                 self.send_error(404, f"Not found: {path}")
 
-    def handle_chat(self, qs, project_dir):
-        """Stream a Claude turn to the browser as SSE. Shells out to the `claude` CLI in stream-json mode with
-        cwd=project_dir (full file access there). Multi-turn via --resume <sid> supplied by the client."""
-        msg = (qs.get("msg") or [""])[0]
-        sid = (qs.get("sid") or [""])[0]
-
-        def sse(obj):
-            self.wfile.write(f"data: {json_top.dumps(obj)}\n\n".encode())
-            self.wfile.flush()
-
-        self.send_response(200)
-        self.send_header("Content-Type", "text/event-stream")
-        self.send_header("Cache-Control", "no-cache")
-        self.send_header("Connection", "keep-alive")
-        self.end_headers()
-
-        if not msg:
-            sse({"kind": "error", "text": "empty message"}); return
-        cmd = [CLAUDE_BIN, "-p", msg, "--output-format", "stream-json", "--verbose"]
-        if sid:
-            cmd += ["--resume", sid]
-        try:
-            proc = subprocess.Popen(cmd, cwd=project_dir, stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT, text=True)
-            for line in proc.stdout:
-                line = line.strip()
-                if not line or not line.startswith("{"):
-                    continue
-                try:
-                    ev = json_top.loads(line)
-                except json_top.JSONDecodeError:
-                    continue
-                t = ev.get("type")
-                if t == "system" and ev.get("subtype") == "init":
-                    sse({"kind": "session", "sid": ev.get("session_id", "")})
-                elif t == "assistant":
-                    for blk in ev.get("message", {}).get("content", []):
-                        if blk.get("type") == "text" and blk.get("text"):
-                            sse({"kind": "text", "text": blk["text"]})
-                        elif blk.get("type") == "tool_use":
-                            sse({"kind": "tool", "name": blk.get("name", "?"),
-                                 "detail": json_top.dumps(blk.get("input", {}))[:200]})
-                elif t == "result":
-                    sse({"kind": "session", "sid": ev.get("session_id", sid)})
-                    sse({"kind": "done"})
-            proc.wait()
-        except BrokenPipeError:
-            pass
-        except Exception as e:
-            try:
-                sse({"kind": "error", "text": str(e)})
-            except Exception:
-                pass
-
     def do_POST(self):
         parsed = urlparse(self.path)
         if parsed.path == "/api/order":
@@ -4844,16 +4727,17 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 
 
 class ThreadingDashboardServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
-    # Multi-threaded so a long streaming /api/chat turn doesn't block the rest of the dashboard.
+    # Multi-threaded so one slow request (a big diff, a git log) doesn't block the rest of the
+    # dashboard.
     # daemon_threads so Ctrl+C exits cleanly.
     daemon_threads = True
 
 
 if __name__ == "__main__":
     os.chdir(ROOT)
-    # Bind to loopback ONLY (127.0.0.1), not all interfaces. The in-page chat spawns a Claude
-    # subprocess with Bash access in the project dir; a network-reachable bind would make that an
-    # unauthenticated remote-code-execution surface for anyone on the same network. Loopback means
+    # Bind to loopback ONLY (127.0.0.1), not all interfaces. The dashboard reads the whole project
+    # and writes to it (review ledger, figure order), with no authentication of any kind — a
+    # network-reachable bind would hand all of that to anyone on the same network. Loopback means
     # the only client is the local browser.
     server = ThreadingDashboardServer(("127.0.0.1", PORT), DashboardHandler)
     print(f"Dashboard live at http://localhost:{PORT}/")
