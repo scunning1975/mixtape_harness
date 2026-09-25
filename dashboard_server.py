@@ -87,20 +87,19 @@ COURTROOM_HYPOTHESES = {
     6: [],
 }
 
-# Canonical DiD checklist (matches checklists/did_checklist.md, 0–11 + Step 2 "Bite").
+# Canonical DiD checklist (the Cunningham Checklist sent to the team 2026-09: 0 preflight, 1-7, 8 Rerun).
 # TEMPLATE version: `expected` exhibit paths are blank — each project fills them in
-# its analyses/<slug> instance. Numbers track checklists/did_checklist.md 1:1.
+# its analyses/<slug> instance.
 CHECKLIST_STEPS = [
     {"num": 0, "name": "Package preflight", "desc": "Eyeball every estimator's version (Gawande pause)", "expected": []},
-    {"num": 1, "name": "Target parameter", "desc": "Define the estimand + weighting", "expected": []},
-    {"num": 2, "name": "Bite (assignment mechanism)", "desc": "Document treatment, first-stage, & who gets treated → deduce selection", "expected": []},
-    {"num": 3, "name": "Covariates, balance & overlap", "desc": "X that drive Y(0) trends (/covariates); std. diff table + propensity common support", "expected": []},
-    {"num": 4, "name": "Treatment rollout", "desc": "panelview of who is treated when", "expected": []},
-    {"num": 5, "name": "Outcomes by cohort", "desc": "Average outcome over time by cohort (pre-trends by eye)", "expected": []},
-    {"num": 6, "name": "Sample sizes", "desc": "Treated / control / dropped — every drop named", "expected": []},
-    {"num": 7, "name": "Estimator (gate) + estimate", "desc": "Choose the estimator (version preflight passes before it runs); produce ATT(s)", "expected": []},
-    {"num": 8, "name": "Event study + falsification", "desc": "Dynamic figure + placebo (group/outcome/period), 10a-10d", "expected": []},
-    {"num": 9, "name": "Debug fallback", "desc": "Version check first if estimator misbehaves", "expected": []},
+    {"num": 1, "name": "Target estimand", "desc": "Y(1)-Y(0), the population, and non-negative weights summing to one; decide population weighting and say why", "expected": []},
+    {"num": 2, "name": "Bite", "desc": "The treatment's first-order effects: where it created variation (maps + time series for regional panels)", "expected": []},
+    {"num": 3, "name": "Covariates & balance", "desc": "X chosen to remove bias (Y(0) trends for DiD); std. diff > 0.25 = imbalanced; pscore trimming, separation, ~10 treated per covariate", "expected": []},
+    {"num": 4, "name": "Sample shares", "desc": "Treated units by group-time; cohort shares N_g/N_T drive the CS aggregation", "expected": []},
+    {"num": 5, "name": "Outcome trends by group", "desc": "Pre-treatment only, don't peek (Rubin 2008); optional pre-period 2x2s", "expected": []},
+    {"num": 6, "name": "Estimator + event study", "desc": "Estimator whose identifying assumptions are most realistic for the Step 1 estimand; name any new assumptions; event studies", "expected": []},
+    {"num": 7, "name": "Falsification & sensitivity", "desc": "Popperian placebo outcomes; Rambachan-Roth credible parallel trends (M grid)", "expected": []},
+    {"num": 8, "name": "Rerun", "desc": "Version check first, then rerun if the estimator misbehaves", "expected": []},
 ]
 
 # =============================================================================
@@ -621,21 +620,20 @@ def render_checklist():
 # Per-analysis checklist scan + render — the harness's first-class surface.
 # Reads every analyses/<slug>/checklist.md, parses frontmatter (with PyYAML so
 # nested package blocks work), counts step deliverables and checkbox state,
-# and emits (a) a grid (rows = analyses, cols = steps 0-10 + Sign-off),
+# and emits (a) a grid (rows = analyses, cols = steps 0-8 + Sign-off),
 # (b) flippable package cards from the union of every analysis's packages.
 # =============================================================================
 
 ANALYSIS_STEPS = [
     {"num": "0",  "label": "Pkg",       "title": "Package preflight"},
-    {"num": "1",  "label": "Target",    "title": "Pre-registration / target parameter"},
-    {"num": "2",  "label": "Bite",      "title": "Bite — treatment + assignment mechanism (deduce selection)"},
-    {"num": "3",  "label": "X+Balance", "title": "Covariates, balance & overlap (EPV, std. diff, common support)"},
-    {"num": "4",  "label": "Rollout",   "title": "Treatment visualization"},
-    {"num": "5",  "label": "Outcome",   "title": "Outcome over time"},
-    {"num": "6",  "label": "N",         "title": "Sample sizes"},
-    {"num": "7",  "label": "Estimator", "title": "Estimator (gate) + estimate (ATT)"},
-    {"num": "8",  "label": "Falsify",   "title": "Event study + falsification (placebos, 10a-10d)"},
-    {"num": "9",  "label": "Debug",     "title": "Estimator-misbehaves fallback"},
+    {"num": "1",  "label": "Target",    "title": "Target estimand + weighting"},
+    {"num": "2",  "label": "Bite",      "title": "Bite: the treatment's first-order effects"},
+    {"num": "3",  "label": "X+Balance", "title": "Covariate selection & balance (std. diff, trimming, separation, EPV)"},
+    {"num": "4",  "label": "Share",     "title": "Sample shares (treated units by group-time, N_g/N_T)"},
+    {"num": "5",  "label": "Outcome",   "title": "Outcome trends by group (pre-treatment, don't peek)"},
+    {"num": "6",  "label": "Estimator", "title": "Select estimator + event studies"},
+    {"num": "7",  "label": "Falsify",   "title": "Falsification & sensitivity (placebos, Rambachan-Roth)"},
+    {"num": "8",  "label": "Rerun",     "title": "Rerun (version check first if the estimator misbehaves)"},
     {"num": "S",  "label": "Sign",      "title": "Sign-off (manifest.yaml)"},
 ]
 
@@ -907,7 +905,7 @@ def render_checklist_per_analysis():
         grid_html = f'''
         <div class="checklist-section">
           <div class="checklist-section-hdr">The checklist (pinned)</div>
-          <p class="checklist-help">The canonical DiD checklist — the felt board of what every analysis must do. No analysis has been instantiated yet; the row below is the empty template. The AI invokes <code>/checklist</code> to create <code>analyses/&lt;slug&gt;/checklist.md</code> and walk Steps 0–11.
+          <p class="checklist-help">The canonical DiD checklist — the felt board of what every analysis must do. No analysis has been instantiated yet; the row below is the empty template. The AI invokes <code>/checklist</code> to create <code>analyses/&lt;slug&gt;/checklist.md</code> and walk Steps 0–8.
           <span class="legend"><span class="cell-done">●</span> done (locked) · <span class="cell-active">●</span> You Are Here (active) · <span class="cell-open">●</span> open</span></p>
           <table class="analysis-grid">
             <thead><tr><th>Slug</th>{cols}</tr></thead>
@@ -4510,7 +4508,7 @@ def build_page(hypotheses, insights, decisions, pipeline, figures, code_files, d
     <div class="view{' active' if _home else ''}" id="v-home"><h2>Verification Debt</h2><p style="color:var(--muted);font-size:0.78rem;margin-bottom:1rem;">Where you always land. The scale weighs work <em>produced</em> (commits) against work <em>verified</em> (diffs you reviewed) — accept a diff in the Diffs tab and it settles live. Below it, today's to-do (from <code>TODAY.md</code>).</p>{render_home() if _home else ''}</div>
     <div class="view{'' if _home else ' active'}" id="v-decks"><h2>Decks</h2><p style="color:var(--muted);font-size:0.78rem;margin-bottom:1rem;">Self-contained HTML decks under <code>decks/html/</code>, embedded live and newest-first. Pick one from the rail; it renders in place.</p>{render_decks()}</div>
     <div class="view" id="v-narrative"><h2>Template</h2>{reorient_html}<p style="color:var(--muted);font-size:0.78rem;margin-bottom:1rem;">The research-appendix genre — the standing pattern the write-up follows. The empty form; no project findings.</p>{render_narrative(hypotheses, insights)}</div>
-    <div class="view" id="v-checklist_per_analysis"><h2>Checklist</h2><p style="color:var(--muted);font-size:0.78rem;margin-bottom:1rem;">The methodological gate upstream of everything. <strong>Click an analysis row</strong> to open its stages and their exhibits in place — each figure/table flips from the exhibit to its description to the scrollable source code that made it (Esc backs out). Per-analysis grid + Step 0 package cards below. Every DiD analysis instantiates <code>analyses/&lt;slug&gt;/checklist.md</code> from the template — the AI invokes <code>/checklist</code> to walk Steps 0–11.</p>{render_checklist_per_analysis()}</div>
+    <div class="view" id="v-checklist_per_analysis"><h2>Checklist</h2><p style="color:var(--muted);font-size:0.78rem;margin-bottom:1rem;">The methodological gate upstream of everything. <strong>Click an analysis row</strong> to open its stages and their exhibits in place — each figure/table flips from the exhibit to its description to the scrollable source code that made it (Esc backs out). Per-analysis grid + Step 0 package cards below. Every DiD analysis instantiates <code>analyses/&lt;slug&gt;/checklist.md</code> from the template — the AI invokes <code>/checklist</code> to walk Steps 0–8.</p>{render_checklist_per_analysis()}</div>
     <div class="view" id="v-diffs"><h2>Diffs</h2><p style="color:var(--muted);font-size:0.78rem;margin-bottom:1rem;">Local git history for this project — the <strong>bounded diff as the unit of verification</strong>. Click a commit card and it floats open into a full-screen view — the front shows only what changed (green added / red removed); hit "Show full context" to expand, or flip the card for authored/committed dates and the review sign-off. Use ← → to walk commits. Mark a commit reviewed once you agree with it — that pays down verification debt and the scale settles live. Read-only on git: the dashboard runs <code>git log</code>/<code>git show</code> only, never commits or pushes.</p>{render_diffs()}</div>
     <div class="view" id="v-figures"><h2>Figures</h2><div style="{_ph}">Flip-card gallery of pipeline-produced figures. Each card shows the figure with its source script and a status badge; click a card to flip it for full provenance (script path, line number, approval state). This tab is populated automatically once the analysis pipeline emits figures to <code>output/figures/</code>. It is empty until then — nothing appears here that the runner did not produce.</div></div>
     <div class="view" id="v-tables"><h2>Tables</h2><div style="{_ph}">Flip-card gallery of pipeline-produced tables. Each card shows a table with the source script that generated it and a status badge; click to flip for provenance and approval state. This tab is populated automatically once the analysis pipeline emits tables to <code>output/tables/</code>. It is empty until then — every table shown traces back to a wired script.</div></div>
