@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
 protect-raw-data.py — PreToolUse hook. Blocks Edit/Write/MultiEdit/NotebookEdit whose target
-resolves into a data/raw/ directory. Raw source data is IMMUTABLE (provenance RULE OF LAW / DCAS #2).
+resolves to an EXISTING file in a data/raw/ directory. Raw source data is IMMUTABLE (provenance RULE OF LAW / DCAS #2).
+Adding a NEW file to data/raw/ is allowed: intake is fine, modification is not. Every transform
+reads raw and writes to a clean/derived dir.
 
 Deliberately MINIMAL (2026-08-24, after a 3-agent red team broke the bigger version):
 this is the FAST, EXPLANATORY top layer only. It catches the modal honest mistake — the agent
@@ -57,15 +59,17 @@ def main():
     if not path:
         sys.exit(0)
 
-    if RAW_RE.search(resolve(path)):
+    resolved = resolve(path)
+    if RAW_RE.search(resolved) and os.path.exists(resolved):
         sys.stderr.write(
-            "BLOCKED by protect-raw-data: this path resolves inside a data/raw/ directory, which is "
+            "BLOCKED by protect-raw-data: this path is an EXISTING file inside a data/raw/ directory, which is "
             "IMMUTABLE (provenance RULE OF LAW / DCAS #2 — raw source data is never modified). Read it, "
             "and WRITE transformed output to data/derived/ (or the project's derived dir) via a named "
             "script, so the chain real -> code -> exhibit stays traceable.\n"
             f"    attempted: {path}\n"
             "This hook is only the fast top layer; the kernel seal (root:wheel 555/444) is the wall. "
-            "If a raw file genuinely must be replaced, that is a deliberate sudo intake step the maintainer runs."
+            "Adding a NEW file to data/raw/ is allowed. If an existing raw file genuinely must be "
+            "replaced, that is a deliberate step the maintainer runs."
         )
         sys.exit(2)  # exit 2 = block the tool call and return stderr to the agent
 

@@ -4280,8 +4280,8 @@ def render_skills_hooks():
     HOOKS = [
         {"icon": "\U0001F6E1", "cmd": "protect-raw-data", "name": "Protect Raw Data", "color": "var(--green)",
          "tag": "PreToolUse · Edit / Write",
-         "front": "Blocks any edit or write to a <code>data/raw/</code> file, in any project. Raw source data is immutable — every transform reads raw and writes a <i>derived</i> dir.",
-         "back": "A hard exit-2 wall the agent cannot walk through, independent of whether it remembers the rule. Reading raw data is fine — only writes and edits are blocked. Enforces DCAS #2 (data availability)."},
+         "front": "Blocks any edit or overwrite of an existing <code>data/raw/</code> file, in any project. Raw source data is immutable — every transform reads raw and writes a <i>clean</i> or <i>derived</i> dir.",
+         "back": "A hard exit-2 wall the agent cannot walk through, independent of whether it remembers the rule. Reading raw data is fine, and adding a NEW raw file (data intake) is allowed — only changing an existing raw file is blocked. Enforces DCAS #2 (data availability)."},
         {"icon": "\U0001F6AB", "cmd": "no-fabricated-exhibit", "name": "No Fabricated Exhibit", "color": "var(--red)",
          "tag": "PreToolUse · Edit / Write",
          "front": "Blocks a figure/table script whose text says synthetic / illustrative / made-up / placeholder — <i>unless</i> it's an acknowledged Monte Carlo (the one carve-out).",
