@@ -131,5 +131,5 @@ transfers cleanly; the specific tools need translation.
 
 ### Files produced by this read
 - `harness_build/split_rubin_design_trumps_analysis/summary_pp*.md` — 9 per-chunk summaries.
-- This review: `REVIEW_Rubin.md`. Companions in this folder: `REVIEW.md` (Cengiz),
+- This review: `REVIEW_Rubin.md`. Companions in this folder:
   `REVIEW_Miller_Johnson_Wherry.md`, `REVIEW_Dias_Fontes.md`.

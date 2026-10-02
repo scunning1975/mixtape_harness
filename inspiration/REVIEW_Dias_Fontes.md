@@ -59,8 +59,8 @@ the two sides move in *opposite* directions — care shifts from institution to 
    in institutional care"), and it is the numerator-partner of their Penrose story.
 3. The authors literally use the **homicide ÷ hospitalization ratio (0.149 / −0.95)** as a
    dose-response: ≈**15.7% of deinstitutionalized patients involved in a violent death**. That
-   ratio *is* bite-scaling — reduced form over first stage — the same Wald logic as CDLZ's
-   elasticity and MJW's per-covered mortality effect. Perfect for the harness: one arrow from
+   ratio *is* bite-scaling — reduced form over first stage — the same Wald logic as
+   MJW's per-covered mortality effect. Perfect for the harness: one arrow from
    BITE to MAIN RESULT.
 
 **Why this is the teaching point.** The bite here is *engineered by the reform's design* (staggered
@@ -166,12 +166,11 @@ stage, show its pre-trend as carefully as the homicide pre-trend.
 
 ---
 
-### The three-paper bite through-line (for the film)
+### The two-paper bite through-line (for the film)
 
 ```
                  BITE = first stage, engineered by design, that licenses everything after
   ───────────────────────────────────────────────────────────────────────────────────────
-  CDLZ  min wage  │ Δ wage of affected workers        │ ONE number      6.8%
   MJW   Medicaid  │ Δ coverage (elig→enroll→uninsured)│ a LADDER        +50→+12.8→−4.4pp
   DIAS  CAPS      │ Δ care (outpatient ↑ / admits ↓)  │ TWO-SIDED       +113% / −7.5%
   ───────────────────────────────────────────────────────────────────────────────────────
@@ -180,6 +179,5 @@ stage, show its pre-trend as carefully as the homicide pre-trend.
 ```
 
 ### Files produced by this read
-- `min wage_build/split_dias-fontes-.../summary_pp*.md` — 9 per-chunk summaries (bite-tagged).
-- This review: `REVIEW_Dias_Fontes.md`. Companions: `REVIEW.md` (CDLZ),
-  `REVIEW_Miller_Johnson_Wherry.md`.
+- `papers_build/split_dias-fontes-.../summary_pp*.md` — 9 per-chunk summaries (bite-tagged).
+- This review: `REVIEW_Dias_Fontes.md`. Companion: `REVIEW_Miller_Johnson_Wherry.md`.

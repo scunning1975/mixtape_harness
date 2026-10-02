@@ -6,7 +6,7 @@
 #   RED   = open   — everything else (not locked, not active)
 #
 # TO CLOSE A STAGE: drop a file named `LOCKED` into that stage folder
-#   e.g.  echo "closed 2026-01-15: joint sign-off" > analyses/<slug>/stages/02_assignment/LOCKED
+#   e.g.  echo "closed 2026-01-15: joint sign-off" > analyses/<slug>/stages/02_bite/LOCKED
 #   → the cell turns green.
 #
 # TO REOPEN A STAGE for more work ("surgery"): delete its LOCKED file

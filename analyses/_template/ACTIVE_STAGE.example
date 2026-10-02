@@ -1,4 +1,4 @@
 # ACTIVE_STAGE
 
-# Put the current stage folder name here (e.g. 02_assignment) to 'enter the room'.
+# Put the current stage folder name here (e.g. 02_bite) to 'enter the room'.
 # The dashboard Stages hallway glows the active room; /amnesia stage-mode reads it.

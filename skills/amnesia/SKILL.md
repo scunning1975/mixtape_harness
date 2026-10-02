@@ -94,8 +94,8 @@ When the user names a **checklist stage** — by number ("amnesia stage 2"), by 
 ### Resolve the stage (whatever the user says → one room)
 
 Stages live at `analyses/<slug>/stages/<NN_name>/`. Map the user's words to a folder, generously:
-- a number → the `NN_` prefix (2 → `02_assignment`).
-- a nickname → the stage's known alias. The canonical map: 0 packages · 1 target · **2 bite / assignment / treatment / selection** · 3 covariates · 4 balance · 5 rollout · 6 outcome · 7 samplesize / N · 8 estimator · 9 eventstudy · 10 falsification · 11 debug.
+- a number → the `NN_` prefix (2 → `02_bite`).
+- a nickname → the stage's known alias. The canonical map: 0 packages · 1 target · **2 bite / assignment / treatment / selection / rollout** · 3 covariates / balance · 4 sample shares / N · 5 outcome trends · 6 power / MDE · 7 estimator / event study · 8 falsification / sensitivity · 9 rerun / debug.
 - "bite", "assignment mechanism", "treatment", "selection" ALL resolve to stage 2. Be liberal: the user's intent is a room, not a string match.
 - If more than one analysis has that stage, use the one whose `analyses/<slug>/ACTIVE_STAGE` matches, else ask which slug (only if genuinely ambiguous).
 

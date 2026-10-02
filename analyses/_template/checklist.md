@@ -35,9 +35,11 @@ packages:
 
 # DiD Checklist — <slug>
 
-This is an instance of `checklists/did_checklist.md`. Fill in deliverables as you complete each step. Do not edit the global template; edit this file. Steps must be completed in order. Step 7 (estimation) is gated by completion of Step 0 (human-attention package preflight) AND Steps 1–6.
+This is an instance of `checklists/did_checklist.md`, which follows the Cunningham Checklist (`checklists/Checklist.docx`). Fill in deliverables as you complete each step. Do not edit the global template; edit this file. Steps must be completed in order. Step 7 (estimation) is gated by completion of Step 0 (human-attention package preflight) AND Steps 1–6.
 
-**Scope.** This is an ATT checklist for designs where the missing counterfactual is Y(0). It applies as written to DiD (any flavor), SynthDiD, synthetic control, matching for ATT, and panel event-study with no-anticipation. If your design targets ATU, ATE, or uses non-parallel-trends identification (RDD, sharp IV), Step 9's falsification class needs adapting — flag in `notes.md` and adapt as you go.
+Each step has a stage folder with the same number: `stages/00_packages`, `01_target`, `02_bite`, `03_covariates_balance`, `04_sample_shares`, `05_outcome_trends`, `06_power`, `07_estimator_eventstudy`, `08_falsification`, `09_rerun`, `S_signoff`.
+
+**Scope.** This is an ATT checklist for designs where the missing counterfactual is Y(0). It applies as written to DiD (any flavor), SynthDiD, synthetic control, matching for ATT, and panel event-study with no-anticipation. If your design targets ATU, ATE, or uses non-parallel-trends identification (RDD, sharp IV), Step 8's falsification class needs adapting — flag in `notes.md` and adapt as you go.
 
 ## 0. Package preflight — the user looks (Gawande pause)
 
@@ -53,15 +55,28 @@ This is a human-attention checkpoint, not an automation. **The user verifies the
 
 **Why no automation:** the failure mode is not "wrong version installed" (a machine can catch that) but "user did not realize this version's behavior differs from the version they think they're using" (a machine cannot catch that). Step 0 forces the user to look. See `checklists/did_checklist.md` Step 0 for the longer argument and the Cunningham (2026) "Claude Code 53" reference.
 
-## 1. Target parameter and weighting
+## 1. Target estimand
 - [ ] Estimand: <write in expectation form, e.g. $E[Y(1) - Y(0) \mid D=1]$ for ATT>
+- [ ] Population: <which units carry these treatment effects>
 - [ ] Population weight: <yes/no, with rationale>
+- [ ] Why this estimand and not the others: <the decision it serves>
 - [ ] Unit of observation: <county / individual / firm>
 - [ ] Time unit: <day / week / month>
 
 **Deliverable file:** N/A (decision recorded above)
 
-## 2. Covariates
+## 2. Bite
+- [ ] The treatment's first-order effects named: <what the treatment did that would move the outcome>
+- [ ] Where and when it created variation: map and time series (regional panels).
+- [ ] Is there a first stage? <did the treatment actually arrive>
+- [ ] Assignment mechanism: <who is treated and why; what predicts treatment>
+- [ ] Staggered: panelView rollout figure. Two-group: county map.
+
+**Deliverable files:**
+- Figure: `output/figures/<slug>_bite.png`
+- Figure: `output/figures/<slug>_rollout.png`
+
+## 3. Covariate selection and balance
 
 **Run the `/covariates` skill** (`~/.claude/skills/covariates/SKILL.md`) before adding any covariate. The interview is the discipline against specification searching. Free-form selection is how analyses drift toward whatever covariate set produces a publishable result.
 
@@ -70,6 +85,13 @@ This is a human-attention checkpoint, not an automation. **The user verifies the
 - [ ] Theoretical justification recorded ($E[Y(0) \mid D=1, X] = E[Y(0) \mid D=0, X]$).
 - [ ] Source data verified.
 
+### Balance and overlap
+- [ ] Control group: <never-treated / not-yet-treated / restricted subset, with rationale>
+- [ ] Propensity-score overlap figure
+- [ ] Normalized-differences table (Imbens-Rubin |0.25| threshold)
+- [ ] Propensity-score trimming rule recorded (or "none", with reason)
+- [ ] Perfect separation checked: <treated minimum and comparison maximum propensity scores overlap?>
+
 ### EPV check — within cohort, not total
 
 - [ ] **Computed $\text{EPV}_g = n_g / k$ for every treated cohort** ($n_g$ = treated units in cohort $g$; $k$ = number of covariates).
@@ -77,124 +99,43 @@ This is a human-attention checkpoint, not an automation. **The user verifies the
 - [ ] **If smallest-cohort EPV < 7, remediation recorded** (drop covariates for that cohort, run RA only, or document as IPW-unidentified).
 - [ ] **Confirmed: EPV is computed on within-cohort treated count, not total treated count.** The aggregate often passes while the binding cohort fails. Hypothetical example: 51 treated counties / 7 covariates = 7.3 looks fine, but cohort sizes 33/5/8/5 give EPVs 4.7/0.7/1.1/0.7 — three of four cohorts fail. The aggregate metric hides the problem.
 
-**Deliverable file:** `analyses/<slug>/decisions.md` or `data/covariates_proposed.md`
-
-## 3. Balance and overlap
-- [ ] Control group: <never-treated / not-yet-treated / restricted subset, with rationale>
-- [ ] Propensity-score overlap figure
-- [ ] Normalized-differences table (Imbens-Rubin |0.25| threshold)
-
 **Deliverable files:**
+- Decision: `analyses/<slug>/decisions.md` or `data/covariates_proposed.md`
 - Figure: `output/figures/<slug>_pscore.png`
 - Table: `output/tables/<slug>_balance.tex`
 
-## 4. Treatment visualization
-- [ ] Staggered: panelView rollout figure. Two-group: county map.
+## 4. Sample shares
+- [ ] Counts of treated, control, dropped (with reasons)
+- [ ] Treated units by cohort, and each cohort's share $N_g / N_T$
+- [ ] Dominant cohort named: <cohort and share>
+- [ ] N's reconcile with Step 2's map
 
-**Deliverable file:** `output/figures/<slug>_rollout.png`
+**Deliverable file:** `output/tables/<slug>_sample_shares.tex`
 
-## 5. Outcome over time (aggregated)
-- [ ] Mean outcome by group, plotted over the full time window
+## 5. Outcome trends by group
+- [ ] Mean outcome by group, plotted over the **pre-treatment** window only (don't peek)
 - [ ] Visual inspection of pre-period parallel trends documented in notes
+- [ ] Optional: pre-period $2 \times 2$s
 
 **Deliverable file:** `output/figures/<slug>_outcome_by_group.png`
 
-## 6. Sample sizes
-- [ ] Counts of treated, control, dropped (with reasons)
-- [ ] N's reconcile with Step 4's map
+## 6. Power calculation
+- [ ] Economically meaningful effect size: <value and why>
+- [ ] Minimum detectable effect for this design: <value>
+- [ ] Powered? <yes/no; if no, what a null would mean>
 
-**Deliverable file:** `output/tables/<slug>_sample_sizes.tex`
+**Deliverable file:** `output/figures/<slug>_power.png`
 
-## 7. Estimator
-**GATE:** Do not proceed past this point until Steps 1–6 have deliverables AND Step 10 preflight passes.
+## 7. Estimator and event study
+**GATE:** Do not proceed past this point until Steps 1–6 have deliverables AND the preflight below passes.
 
+### 7a. Select
 - [ ] Estimator chosen:
-- [ ] Rationale recorded:
+- [ ] Rationale recorded (which identifying assumptions, why most realistic here):
 
-## 8. Estimation and event study
-- [ ] Estimator run on the validated panel
-- [ ] Universal baseline (CS-DiD): drop $g-1$ cells from event-study display
-- [ ] Event-study figure with publication-quality labels
-- [ ] Simple-average ATT reported (not group-size-weighted)
+### 7b. Preflight (run BEFORE any estimator call)
 
-**Deliverable files:**
-- Figure: `output/figures/<slug>_event_study.png`
-- Table: `output/tables/<slug>_results.csv`
-
-## 9. Falsification
-
-Every $2 \times 2$ DiD identifies $\text{ATT} + \mathbb{E}[\Delta Y(0)_T - \Delta Y(0)_C]$. Falsifications measure that bias under conditions where it should be zero. Run at least one of 9b or 9c — a study with no active falsification has no defense against selection bias. See `checklists/did_checklist.md` Step 9 for the full taxonomy.
-
-### 9a. Same outcome, same units, pre-treatment (event-study leads)
-
-- [ ] Pre-treatment leads individually insignificant.
-- [ ] Pre-treatment leads jointly insignificant.
-- [ ] Visual: leads flat and clustered around zero.
-
-**Deliverable:** the leads in `output/figures/<slug>_event_study.png` (already produced in Step 8).
-
-### Falsification candidates — Claude proposes, user picks
-
-Before filling in 9b and 9c, the AI reads the project context (`CLAUDE.md`, `narrative.md`, `decisions/`, `hypotheses/*.md`, `insights/`, `scratch/`) and proposes 2–3 candidates per class. Both AI suggestions and any user additions are recorded here so the audit trail is complete.
-
-**9b candidates (placebo group)** — Claude proposed:
-
-1. <candidate group> — <rationale>
-2. <candidate group> — <rationale>
-3. <candidate group> — <rationale>
-
-User added:
-
-- (none, or: <additional candidates>)
-
-**9b chosen:** <which one and why>
-
-**9c candidates (placebo outcome)** — Claude proposed:
-
-1. <candidate outcome> — <rationale>
-2. <candidate outcome> — <rationale>
-3. <candidate outcome> — <rationale>
-
-User added:
-
-- (none, or: <additional candidates>)
-
-**9c chosen:** <which one and why>
-
-### 9b. Same outcome, different (untreated) units (placebo group)
-
-- [ ] Placebo group identified and rationale documented:
-- [ ] Identical specification run on placebo group.
-- [ ] Placebo ATT null and insignificant.
-- [ ] Reported alongside main ATT in manuscript.
-
-**Deliverable file:** `output/tables/<slug>_falsification_placebo_group.csv`
-
-### 9c. Different outcome, same units (placebo outcome)
-
-- [ ] Placebo outcome identified and rationale documented:
-- [ ] Identical specification run on placebo outcome.
-- [ ] Placebo effect null and insignificant.
-- [ ] Reported alongside main outcome in manuscript.
-
-**Deliverable file:** `output/tables/<slug>_falsification_placebo_outcome.csv`
-
-### 9d. Rambachan-Roth sensitivity to remaining parallel-trends violation
-
-- [ ] HonestDiD (or equivalent).
-- [ ] Bounds at $\bar{M} = 0, 1, 2$.
-- [ ] Breakdown $\bar{M}$ reported.
-
-**Deliverable file:** `output/tables/<slug>_sensitivity.tex`
-
-### Step 9 sign-off
-
-- [ ] At least one of 9b or 9c ran (not just 9a + 9d).
-- [ ] All falsifications reported in the manuscript, including any that fired.
-
-## 10. Estimator preflight (run BEFORE Step 7)
-
-This is the version-and-encoding gate. Run it before any estimator function call.
+This is the version-and-encoding gate.
 
 - [ ] **Package version against upstream.** `packageVersion("did")` ≥ frontmatter `package_versions.did`. If installed < required, STOP. Ask the user before installing or upgrading.
 - [ ] **Encoding alignment between `tname` and `gname`.** Both on the same integer scale; never-treated = 0.
@@ -205,6 +146,94 @@ This is the version-and-encoding gate. Run it before any estimator function call
 
 If any of these surface a problem, file an incident at `audits/incidents/<YYYY-MM-DD>_<slug>_<failure-mode>.md` naming which sub-check resolved it. Do not silently work around the issue.
 
+### 7c. Run and event study
+- [ ] Estimator run on the validated panel
+- [ ] Universal baseline (CS-DiD): drop $g-1$ cells from event-study display
+- [ ] Event-study figure with publication-quality labels
+- [ ] Simple-average ATT reported (not group-size-weighted)
+
+**Deliverable files:**
+- Figure: `output/figures/<slug>_event_study.png`
+- Table: `output/tables/<slug>_results.csv`
+
+## 8. Falsification and sensitivity
+
+Every $2 \times 2$ DiD identifies $\text{ATT} + \mathbb{E}[\Delta Y(0)_T - \Delta Y(0)_C]$. Falsifications measure that bias under conditions where it should be zero. Run at least one of 8b or 8c — a study with no active falsification has no defense against selection bias. See `checklists/did_checklist.md` Step 8 for the full taxonomy.
+
+### 8a. Same outcome, same units, pre-treatment (event-study leads)
+
+- [ ] Pre-treatment leads individually insignificant.
+- [ ] Pre-treatment leads jointly insignificant.
+- [ ] Visual: leads flat and clustered around zero.
+
+**Deliverable:** the leads in `output/figures/<slug>_event_study.png` (already produced in Step 7).
+
+### Falsification candidates — Claude proposes, user picks
+
+Before filling in 8b and 8c, the AI reads the project context (`CLAUDE.md`, `narrative.md`, `decisions/`, `hypotheses/*.md`, `insights/`, `scratch/`) and proposes 2–3 candidates per class. Both AI suggestions and any user additions are recorded here so the audit trail is complete.
+
+**8b candidates (placebo group)** — Claude proposed:
+
+1. <candidate group> — <rationale>
+2. <candidate group> — <rationale>
+3. <candidate group> — <rationale>
+
+User added:
+
+- (none, or: <additional candidates>)
+
+**8b chosen:** <which one and why>
+
+**8c candidates (placebo outcome)** — Claude proposed:
+
+1. <candidate outcome> — <rationale>
+2. <candidate outcome> — <rationale>
+3. <candidate outcome> — <rationale>
+
+User added:
+
+- (none, or: <additional candidates>)
+
+**8c chosen:** <which one and why>
+
+### 8b. Same outcome, different (untreated) units (placebo group)
+
+- [ ] Placebo group identified and rationale documented:
+- [ ] Identical specification run on placebo group.
+- [ ] Placebo ATT null and insignificant.
+- [ ] Reported alongside main ATT in manuscript.
+
+**Deliverable file:** `output/tables/<slug>_falsification_placebo_group.csv`
+
+### 8c. Different outcome, same units (placebo outcome)
+
+- [ ] Placebo outcome identified and rationale documented:
+- [ ] Identical specification run on placebo outcome.
+- [ ] Placebo effect null and insignificant.
+- [ ] Reported alongside main outcome in manuscript.
+
+**Deliverable file:** `output/tables/<slug>_falsification_placebo_outcome.csv`
+
+### 8d. Rambachan-Roth sensitivity to remaining parallel-trends violation
+
+- [ ] HonestDiD (or equivalent).
+- [ ] Bounds at $\bar{M} = 0, 1, 2$.
+- [ ] Breakdown $\bar{M}$ reported.
+
+**Deliverable file:** `output/tables/<slug>_sensitivity.tex`
+
+### Step 8 sign-off
+
+- [ ] At least one of 8b or 8c ran (not just 8a + 8d).
+- [ ] All falsifications reported in the manuscript, including any that fired.
+
+## 9. Rerun
+
+Only if the estimator misbehaves (NAs, singular-matrix warnings, patterns that don't square with the data). Check the package version first, then encodings, then rerun. See `checklists/did_checklist.md` Step 9.
+
+- [ ] Estimation ran cleanly (no rerun needed), OR
+- [ ] Rerun performed; the check that resolved it: <which one>
+
 ## Sign-off
 
 The canonical sign-off artifact for an analysis is **`analyses/<slug>/manifest.yaml`**. This is the contract — a machine-readable record of what was produced, what package versions produced it, what panel hash it ran on, and what anchor it claims. Everything else (PDFs, .tex includes, dashboard cards) is a derived view. The manifest is what `/referee2 drift` reconciles, what the dashboard reads, and what the writeup cites.
@@ -213,11 +242,12 @@ The canonical sign-off artifact for an analysis is **`analyses/<slug>/manifest.y
 
 **Sign-off checks (in order):**
 
-- [ ] Steps 1–9 complete (or N/A documented).
-- [ ] Step 6 N's reconcile with Step 4's map (no orphan units).
-- [ ] Step 8 estimator matches Step 7 choice.
-- [ ] Step 9 bounds reported and discussed in notes.
-- [ ] Step 10 preflight passed before Step 7 ran; any failures filed as incidents.
+- [ ] Steps 1–8 complete (or N/A documented).
+- [ ] Step 4 N's reconcile with Step 2's map (no orphan units).
+- [ ] Step 6 power statement recorded before Step 7 ran.
+- [ ] Step 7c estimator matches the Step 7a choice.
+- [ ] Step 7b preflight passed before the estimator ran; any failures filed as incidents.
+- [ ] Step 8 bounds reported and discussed in notes.
 - [ ] **`/referee2 drift` returns Clean** (or all flagged drift events are documented in the manifest's `drift.documented_drops` block).
 - [ ] **`scripts/r/_manifest.R::write_manifest("<slug>")` runs without error.** Records: panel path + SHA-256, anchor reference, package versions, every deliverable path (verified to exist), the sign-off timestamp, the cards produced.
 - [ ] Filed: a card per defended claim from this analysis (`cards/<claim>.md`), referenced from the manifest's `cards:` list.

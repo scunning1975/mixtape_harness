@@ -18,14 +18,29 @@ This document is titled "DiD" because that is the most common method here, but t
 
 Every falsification class targets Y(0):
 
-- **9a (pre-period leads)** — were treated and control already on different Y(0) trajectories before treatment?
-- **9b (placebo group)** — a population whose Y(0) under the same external shocks should look like the treated group's Y(0) under no treatment.
-- **9c (placebo outcome)** — an outcome whose Y(0) is unaffected by the treatment's mechanism.
-- **9d (Rambachan-Roth)** — bounds on post-period Y(0) drift.
+- **8a (pre-period leads)** — were treated and control already on different Y(0) trajectories before treatment?
+- **8b (placebo group)** — a population whose Y(0) under the same external shocks should look like the treated group's Y(0) under no treatment.
+- **8c (placebo outcome)** — an outcome whose Y(0) is unaffected by the treatment's mechanism.
+- **8d (Rambachan-Roth)** — bounds on post-period Y(0) drift.
 
 The checklist transfers cleanly to: DiD (any flavor), synthetic DiD, synthetic control, matching for ATT, panel event-study designs with no-anticipation. It does **not** transfer cleanly to ATU designs (missing counterfactual is Y(1)) or ATE designs (both potential outcomes missing) — those need the falsification class flipped or doubled. RDD and IV identify off different logic and need their own checklist.
 
 This is also why **Step 1.3 forces the user to classify their reviewer's most damaging objection as a Y(0) confounder vs a Y(1) treatment component**. A Y(1) worry (the treatment did something other than what you claim) is not falsifiable by placebo — it's an interpretation question. A Y(0) worry (treated and control would have diverged anyway) is what placebos are for.
+
+> **Source of the steps.** Steps 1–8 are the **Cunningham Checklist** (`checklists/Checklist.docx`), in that document's order. Step 0 (package preflight) and Step 9 (rerun) are the harness's additions around it. The dashboard grid, the stage folders under `analyses/<slug>/stages/`, and this file all use the same numbers:
+>
+> | Step | Name | Stage folder |
+> |---|---|---|
+> | 0 | Package preflight | `00_packages` |
+> | 1 | Target estimand | `01_target` |
+> | 2 | Bite | `02_bite` |
+> | 3 | Covariate selection and balance | `03_covariates_balance` |
+> | 4 | Sample shares | `04_sample_shares` |
+> | 5 | Outcome trends by group | `05_outcome_trends` |
+> | 6 | Power calculation | `06_power` |
+> | 7 | Estimator and event study | `07_estimator_eventstudy` |
+> | 8 | Falsification and sensitivity | `08_falsification` |
+> | 9 | Rerun | `09_rerun` |
 
 ## 0. Package preflight — the human looks
 
@@ -47,7 +62,11 @@ The dashboard renders each declared package as a flippable card to make the look
 
 **Why no automation:** the failure mode is not "wrong version installed" (a machine catches that) but "user did not realize this version's behavior differs from the version they think they're using" (a machine cannot catch that). Step 0 forces the user to look. See Cunningham (2026) "Claude Code 53: Applied econometrics will require a detailed checklist" for the longer argument.
 
-## 1. Target parameter and weighting
+## 1. Target estimand
+
+**What this step is.** Define the target estimand. Every causal estimand can be written in treatment-effects notation ($Y(1)-Y(0)$), for an intended population of units, with non-negative weights that sum to one. Examples are the ATE, ATT, and LATE; there are others (quantile treatment effects, CATE, MTE).
+
+**The target estimand is normative, not positive.** There are many estimands one could estimate. To pick one as the target is to say the others are less relevant. The estimand is objective, but the *target* estimand is subjective, and should rest on what the policymaker's core decision would be if they had it, and on their objective function.
 
 ### 1.0 Routing — is this a continuous-treatment design?
 
@@ -58,13 +77,17 @@ If your treatment is binary (or staggered binary across cohorts), continue here.
 ### 1.1 Estimand
 
 - [ ] Estimand: ATT? ATE? ATU? Group-time ATT? Write it in expectation form (e.g., $E[Y(1) - Y(0) \mid D=1]$ for ATT).
-- [ ] Population weight? (Yes / No, and rationale.)
+- [ ] Population: which units carry those treatment effects?
+- [ ] Weights: non-negative and summing to one. **Weight by geographic population, or not?** (Yes / No, and why. See Cunningham (2026) section 10.14, "Designing your diff-in-diff by checklist," and Baker et al. (2026), "Difference-in-Differences: A Practitioner's Guide.")
+- [ ] Why this estimand and not the others? One or two sentences on the decision it serves.
 - [ ] Unit of observation (county, individual, firm)?
 - [ ] Time unit (day, week, month)?
 
 **Why this matters:** the target parameter determines which estimators are even appropriate, and weighting choices change the estimand from sample-ATT to population-ATT.
 
-## 2. Understand the treatment and its assignment mechanism
+## 2. Bite
+
+**What this step is.** Show the treatment's first-order effects: the ones that would move the outcome, insofar as such mechanisms exist. Seeing where the treatment created variation in the data builds credibility, and it helps design the study. With regional (e.g., county) panel data, make maps and time-series plots.
 
 **This is identification work, not narrative.** A conditional-PT DiD is only as good as your understanding of *who gets treated and why*. Make that understanding HERE, in the checklist — do not produce it inside the courtroom. The courtroom *displays* what this step *makes*. Three facets:
 
@@ -74,39 +97,72 @@ If your treatment is binary (or staggered binary across cohorts), continue here.
 
 **Why this matters:** understanding selection is what makes the later ATT *interpretable*. A null is "media arrives where customers aren't" only if you have characterized who receives the treatment. This step is where that characterization is built and signed off — so the covariates (Step 3) are chosen with the assignment mechanism in view, not guessed.
 
-## 3. Covariates
-Run the `/covariates` skill (see ~/.claude/skills/covariates/SKILL.md). Five-question interview, synthesize the 10-chapter book, source the data. Informed by Step 2's assignment mechanism.
+**Treatment visualization (part of bite):**
 
-- [ ] Output: `data/covariates_proposed.md`
-- [ ] Theoretical justification: $E[Y(0) mid D=1, X=x] = E[Y(0) mid D=0, X=x]$
-- [ ] Operational justification: Heckman-Ichimura-Todd (1997), find X that drives $Delta Y(0)$.
-
-## 4. Balance and overlap
-- [ ] Decide control group: never-treated / not-yet-treated / restricted subset (and which subset).
-- [ ] **Figure:** Propensity score distribution for treated vs. control (overlapping density plot).
-- [ ] **Table:** Normalized differences in means.
-  - Formula: $rac{ar Y_T - ar Y_C}{sqrt{(hatsigma^2_T + hatsigma^2_C)/2}}$
-  - Last column = absolute value
-  - **Bold** rows where $|	ext{normalized diff}| > 0.25$
-  - Footnote: "Imbens & Rubin (2015) identify $|	ext{normalized diff}| > 0.25$ as imbalanced."
-
-## 5. Treatment visualization
 - [ ] Staggered design: `panelview` plot (R) showing treatment timing per unit.
 - [ ] Two-group design: geographic map (counties / states / cities). Treated colored, control gray, dropped units excluded entirely.
 
-## 6. Outcome over time (aggregated)
-- [ ] Plot mean Y over time for treated and control AT THE GROUP LEVEL — not by unit.
-- [ ] Visual inspection of pre-period parallel trends.
+## 3. Covariate selection and balance
 
-## 7. Sample sizes
+**What this step is.** Choose covariates to address bias, and less so to explain the outcome. We are trying to estimate the counterfactual correctly. This needs a principled method for picking covariates.
+
+- **Unconfoundedness designs** repair *levels*: strata-specific comparisons averaged up, propensity-score or distance matching (with or without bias adjustment), or a properly specified (e.g., saturated) regression adjustment. Different estimands need different specifications.
+- **Difference-in-differences** repairs *trends* in the untreated potential outcome. If a covariate causes differential trends in $E[Y(0)]$ and is imbalanced between treated and control, parallel trends is mechanically violated. If you know that covariate you can repair it with inverse propensity weighting, saturated regression adjustment, or both (doubly robust).
+
+### 3a. Selection
+
+Run the `/covariates` skill (see ~/.claude/skills/covariates/SKILL.md). Five-question interview, synthesize the 10-chapter book, source the data. Informed by Step 2's assignment mechanism.
+
+- [ ] Output: `data/covariates_proposed.md`
+- [ ] Theoretical justification: $E[Y(0) \mid D=1, X=x] = E[Y(0) \mid D=0, X=x]$
+- [ ] Operational justification: Heckman-Ichimura-Todd (1997), find X that drives $\Delta Y(0)$.
+
+### 3b. Balance and overlap diagnostics
+
+- [ ] Decide control group: never-treated / not-yet-treated / restricted subset (and which subset).
+- [ ] **Figure:** Propensity score distribution for treated vs. control (overlapping density plot).
+- [ ] **Table:** Normalized differences in means.
+  - Formula: $\frac{\bar X_1 - \bar X_0}{\sqrt{(V_1 + V_0)/2}}$
+  - Last column = absolute value
+  - **Bold** rows where $|\text{normalized diff}| > 0.25$
+  - Footnote: "Imbens & Rubin (2015) identify $|\text{normalized diff}| > 0.25$ as imbalanced."
+  - An imbalanced covariate that is on the candidate list for identification should be adjusted for (IPW or regression adjustment).
+- [ ] **Trim the propensity score.** For the ATT, consider dropping comparison units whose propensity scores are nearly 1 (ignore the treated group; their score is not used for the ATT). For the ATE, also look at treated units whose scores are nearly 0. Both get explosively large inverse-probability weights. Record the rule used; this is a researcher degree of freedom (Crump, Hotz, Imbens and Mitnik 2008).
+- [ ] **Check for perfect separation.** With many covariates, especially continuous ones concentrated in one group, the treated and comparison propensity scores may not overlap at all. If so, consider regression adjustment (sensitive to specification: polynomials, interactions) or machine learning.
+- [ ] **Events per covariate.** About 10 treated units per covariate if using the propensity score; computed **within cohort**, not on the total treated count. If not met, consider regression adjustment.
+
+## 4. Sample shares
+
+**What this step is.** Count the number of treated units by group-time. This matters for every aggregation. Callaway-Sant'Anna uses sample shares as weights, so a single large cohort can dominate the final aggregate. The share is $N_g / N_T$, where $g$ is the cohort and $N_T$ is the number of treated units. For the ATT only the treated count matters, not the total number of units.
+
 - [ ] **Table:** Counts of treated, control, dropped (and reason for drops).
   - Two-group design: row per group with N.
   - Cohorted design: row per (cohort, treatment date) with N.
+- [ ] Cohort shares $N_g / N_T$ computed and the dominant cohort named.
+- [ ] N's reconcile with Step 2's map or rollout figure (no orphan units).
 
-## 8. Estimator
+## 5. Outcome trends by group
 
-**THREE sub-steps, in order (RULE OF LAW): 8a SELECT → 8b LOCK THE SAMPLE → 8c RUN.**
-**8b — pre-estimation sample-lock gate:** before ANY estimator runs, re-run the pipeline, then `/referee2 drift`
+**What this step is.** Examine outcome trends by group, but **do not peek at post-treatment outcomes yet** (Rubin 2008). Simple plots: do the groups look comparable in the pre-treatment period? This helps you read the event studies later.
+
+- [ ] Plot mean Y over time for treated and control AT THE GROUP LEVEL — not by unit. Pre-treatment period only.
+- [ ] Visual inspection of pre-period parallel trends.
+- [ ] Optional: estimate $2 \times 2$s in the pre-treatment period, to see the event-study leads without post-treatment outcomes or estimated effects.
+
+## 6. Power calculation
+
+**What this step is.** Are we powered for this study? What is the minimum detectable effect (MDE)?
+
+- [ ] Economically meaningful effect size stated (what would matter for the decision in Step 1).
+- [ ] MDE computed for this design: number of clusters, periods, treated share, with clustering and serial correlation accounted for (Bertrand, Duflo and Mullainathan 2004). The `/power` skill runs the interview and the simulation.
+- [ ] Recorded: is the meaningful effect above or below the MDE? If below, say what a null would and would not mean.
+
+## 7. Estimator and event study
+
+**What this step is.** Select the estimator. Use the method whose identifying assumptions, for unbiased estimation of the Step 1 target, are most realistic in this dataset. Keep in mind what heterogeneous treatment effects do to bias, including with respect to covariates, and use the most robust model. When moving away from it, make explicit the new assumptions needed. Then create event studies.
+
+**THREE sub-steps, in order (RULE OF LAW): 7a SELECT → 7b LOCK THE SAMPLE → 7c RUN.**
+**7b — pre-estimation sample-lock gate:** before ANY estimator runs, re-run the pipeline, then `/referee2 drift`
 to reconcile the analytical-sample N against the anchor across every stage that touched the sample (covariates,
 balance, treatment viz, outcome, sample sizes), then `/blindspot` on the sample construction. Samples drift
 silently across stages that ran at different times; catching it AFTER estimation is the silent-sample-drift failure mode.
@@ -114,26 +170,29 @@ Estimation is BLOCKED until the sample is provably fixed and reconciles to one a
 
 Pick one (preference order):
 - [ ] **Callaway-Sant'Anna (2021)** — preferred. Doubly robust, transparent, group-time ATT.
-- [ ] Saturated TWFE with $X 	imes mathbb{1}[t=k]$ interactions (regression adjustment).
+- [ ] Saturated TWFE with $X \times \mathbb{1}[t=k]$ interactions (regression adjustment).
 - [ ] SynthDiD (Arkhangelsky et al. 2021) — when parallel trends are suspect.
 
 Record the choice and rationale.
 
-## 9. Estimation and event study
+**7c — run and event study:**
+
 - [ ] Run the estimator.
 - [ ] If CS-DiD in R: drop $g-1$ ("universal baseline").
 - [ ] **Figure:** Beautiful event study (publication-quality — labels, units, sample, method, time period).
 - [ ] **Report the SIMPLE average** (not the group-size-weighted average).
 
-## 10. Falsification
+## 8. Falsification and sensitivity analysis
+
+**What this step is.** Popperian, theory-driven tests: outcomes (or groups) with a similar confounder structure but no treatment effect. Then Rambachan and Roth "credible parallel trends" sensitivity analysis, with figures showing $M = 0$ up to values like 0.2, 0.4 or 0, 0.5, 1.0.
 
 Every $2 \times 2$ DiD identifies $\text{ATT} + \mathbb{E}[\Delta Y(0)_T - \Delta Y(0)_C]$. The bias term is unobservable; falsifications are the discipline of trying to *measure* it under conditions where it should be zero. If a falsification fires, the design's identification is in trouble; if it does not, you have evidence that the design is doing work.
 
-Run as many of the three classes below as the data permits. **Run at least one of 9b or 9c.** A study with no active falsification has no defense against selection bias. The post-falsification claim should be: "if the alternative hypothesis (no causal effect, just selection or trend) were true, we'd expect to see X — and we don't."
+Run as many of the three classes below as the data permits. **Run at least one of 8b or 8c.** A study with no active falsification has no defense against selection bias. The post-falsification claim should be: "if the alternative hypothesis (no causal effect, just selection or trend) were true, we'd expect to see X — and we don't."
 
-### 9a. Same outcome, same units, pre-treatment period
+### 8a. Same outcome, same units, pre-treatment period
 
-The pre-treatment leads in the event study (already produced in Step 8).
+The pre-treatment leads in the event study (already produced in Step 7).
 
 - [ ] **Pre-treatment leads insignificant individually** (no $t > 2$).
 - [ ] **Pre-treatment leads jointly insignificant** (Wald F-test or Roth (2022) joint test).
@@ -141,21 +200,21 @@ The pre-treatment leads in the event study (already produced in Step 8).
 
 **What this catches:** the most common identification failure — treated and control units already on different trajectories before treatment.
 
-**Caveat:** flat leads do not prove parallel trends post-treatment. They show only that whatever bias exists hadn't fired yet in the visible pre-period. This is why 9d (sensitivity) exists.
+**Caveat:** flat leads do not prove parallel trends post-treatment. They show only that whatever bias exists hadn't fired yet in the visible pre-period. This is why 8d (sensitivity) exists.
 
-### Before 9b/9c — Claude proposes candidates, then elicits
+### Before 8b/8c — Claude proposes candidates, then elicits
 
 Before the user fills in the placebo-group or placebo-outcome blank, the AI should **read the project's context** (`CLAUDE.md`, `narrative.md`, `decisions/`, `hypotheses/*.md`, recent `insights/`, `scratch/`) and **propose 2–3 candidates per placebo class** with a one-line rationale each. Then explicitly ask: *"Do you have other candidates I missed?"*
 
 Same pattern as the `/covariates` skill — interview, suggest, confirm. The AI widens the candidate set from project context; the human picks. The AI does not pick a placebo on its own initiative.
 
 ```
-9b candidates (placebo group):
+8b candidates (placebo group):
 1. <group A> — <rationale>
 2. <group B> — <rationale>
 3. <group C> — <rationale>
 
-9c candidates (placebo outcome):
+8c candidates (placebo outcome):
 1. <outcome A> — <rationale>
 2. <outcome B> — <rationale>
 3. <outcome C> — <rationale>
@@ -165,9 +224,9 @@ Same pattern as the `/covariates` skill — interview, suggest, confirm. The AI 
 
 Document the proposed candidates in the analysis's checklist instance, including the ones the user rejected. The record of what was suggested vs what was chosen is part of the falsification audit trail.
 
-**How to generate candidates:** for 9b (placebo group), surface units that face the same external shocks as the treated but did not receive the treatment's specific mechanism — a population whose Y(0) trend should mirror the treated group's. For 9c (placebo outcome), surface an outcome the treatment's mechanism should NOT move, and separately a positive-control outcome it *should* move (so the test demonstrably has power). Document the candidates proposed and the ones rejected in the analysis's checklist instance — the record of suggested-vs-chosen is part of the falsification audit trail.
+**How to generate candidates:** for 8b (placebo group), surface units that face the same external shocks as the treated but did not receive the treatment's specific mechanism — a population whose Y(0) trend should mirror the treated group's. For 8c (placebo outcome), surface an outcome the treatment's mechanism should NOT move, and separately a positive-control outcome it *should* move (so the test demonstrably has power). Document the candidates proposed and the ones rejected in the analysis's checklist instance — the record of suggested-vs-chosen is part of the falsification audit trail.
 
-### 9b. Same outcome, different (untreated) units
+### 8b. Same outcome, different (untreated) units
 
 Pick a population the treatment's mechanism should NOT reach. Run the same specification. They should show no effect.
 
@@ -180,7 +239,7 @@ Pick a population the treatment's mechanism should NOT reach. Run the same speci
 
 **What this catches:** unobserved shocks correlated with the policy environment that affect everyone (including the placebo group), and design failures where the "control" group was actually treated.
 
-### 9c. Different outcome, same units (post-treatment)
+### 8c. Different outcome, same units (post-treatment)
 
 Pick a post-treatment outcome the treatment's mechanism should NOT change. Run the same design. It should show no effect.
 
@@ -193,20 +252,20 @@ Pick a post-treatment outcome the treatment's mechanism should NOT change. Run t
 
 **What this catches:** mechanism mis-specification (the treatment is doing something, but not what you claim), and broad correlates of policy adoption (treated jurisdictions systematically differ in many post-treatment outcomes).
 
-### 9d. Rambachan-Roth sensitivity
+### 8d. Rambachan-Roth sensitivity
 
-Pre-treatment falsification (9a) constrains pre-period bias only. Post-treatment violations are unobservable. Rambachan-Roth (2024, RESTUD) bounds how much could exist before the result flips.
+Pre-treatment falsification (8a) constrains pre-period bias only. Post-treatment violations are unobservable. Rambachan-Roth (2024, RESTUD) bounds how much could exist before the result flips.
 
 - [ ] **R package:** `HonestDiD` (or Stata `honestdid`).
 - [ ] **Report bounds at $\bar{M} = 0, 1, 2$.**
 - [ ] **Report the breakdown $\bar{M}$** — the value at which the CI first crosses zero. This is the "how much hidden bias to overturn this result" number.
 
-### Sign-off on 9
+### Sign-off on 8
 
-- [ ] **At least one of 9b or 9c was run.** Not optional.
+- [ ] **At least one of 8b or 8c was run.** Not optional.
 - [ ] **All falsifications reported in the manuscript** — including any that fired. Negative falsifications that ran cleanly strengthen the paper; suppressing them weakens it (and is specification searching).
 
-## 11. When estimation misbehaves
+## 9. Rerun: when estimation misbehaves
 
 If the estimator returns NAs, structural error patterns, or "singular matrix" warnings that don't square with what you see in the data, run these in order before assuming your data is wrong:
 
@@ -220,11 +279,12 @@ If the estimator returns NAs, structural error patterns, or "singular matrix" wa
 **Why:** four to six hours can disappear into "the data must be wrong" debugging when the actual fix is a one-line version bump. Documented incident: 2026-06-08, CRAN `did` 2.3.0 → GitHub 2.3.1.907 cleared 27 of 51 phantom NA-SE cells immediately.
 
 ## Sign-off
-- [ ] Steps 1-10 complete.
+- [ ] Steps 1-8 complete.
 - [ ] **Every step has a write-up entry in `analyses/<slug>/findings.md`** (the write-up gate — no step advanced without its lesson recorded).
-- [ ] Step 7 N's reconcile with Step 5's map (no orphan counties).
-- [ ] Step 9 estimator matches Step 8 choice.
-- [ ] Step 10 bounds reported and discussed.
-- [ ] Step 11 only triggers if estimation misbehaves; if it did, document which check resolved it.
+- [ ] Step 4 N's reconcile with Step 2's map (no orphan counties).
+- [ ] Step 6 power statement recorded before Step 7 ran.
+- [ ] Step 7 estimator run matches the Step 7a choice.
+- [ ] Step 8 bounds reported and discussed.
+- [ ] Step 9 only triggers if estimation misbehaves; if it did, document which check resolved it.
 - [ ] **Then, and only then, move to the courtroom** to assemble the produced evidence into the narrative. The courtroom assembles; it does not produce.
 - [ ] Filed: a card per defended claim (cards/<claim>.md).

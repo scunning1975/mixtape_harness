@@ -87,21 +87,89 @@ COURTROOM_HYPOTHESES = {
     6: [],
 }
 
-# Canonical DiD checklist (the Cunningham Checklist sent to the team 2026-09: 0 preflight, 1-8 incl. 7 Power, 9 Rerun).
+# Canonical DiD checklist = the Cunningham Checklist (checklists/Checklist.docx): 0 preflight, Steps 1-8 in the
+# Word document's order (6 Power BEFORE 7 Estimator), then 9 Rerun. `folder` is the stage-canister folder name
+# under analyses/<slug>/stages/ — folder numbers ARE grid step numbers. `summary` is the plain-language
+# explanation shown on the dashboard (grid guide + stage doors/rooms).
 # TEMPLATE version: `expected` exhibit paths are blank — each project fills them in
 # its analyses/<slug> instance.
 CHECKLIST_STEPS = [
-    {"num": 0, "name": "Package preflight", "desc": "Eyeball every estimator's version (Gawande pause)", "expected": []},
-    {"num": 1, "name": "Target estimand", "desc": "Y(1)-Y(0), the population, and non-negative weights summing to one; decide population weighting and say why", "expected": []},
-    {"num": 2, "name": "Bite", "desc": "The treatment's first-order effects: where it created variation (maps + time series for regional panels)", "expected": []},
-    {"num": 3, "name": "Covariates & balance", "desc": "X chosen to remove bias (Y(0) trends for DiD); std. diff > 0.25 = imbalanced; pscore trimming, separation, ~10 treated per covariate", "expected": []},
-    {"num": 4, "name": "Sample shares", "desc": "Treated units by group-time; cohort shares N_g/N_T drive the CS aggregation", "expected": []},
-    {"num": 5, "name": "Outcome trends by group", "desc": "Pre-treatment only, don't peek (Rubin 2008); optional pre-period 2x2s", "expected": []},
-    {"num": 6, "name": "Estimator + event study", "desc": "Estimator whose identifying assumptions are most realistic for the Step 1 estimand; name any new assumptions; event studies", "expected": []},
-    {"num": 7, "name": "Power calculation", "desc": "Are we powered for this study? What's the MDE?", "expected": []},
-    {"num": 8, "name": "Falsification & sensitivity", "desc": "Popperian placebo outcomes; Rambachan-Roth credible parallel trends (M grid)", "expected": []},
-    {"num": 9, "name": "Rerun", "desc": "Version check first, then rerun if the estimator misbehaves", "expected": []},
+    {"num": 0, "folder": "00_packages", "name": "Package preflight",
+     "desc": "Eyeball every estimator's version (Gawande pause)",
+     "summary": "Before anything runs, you look at the version of every estimation package with your own eyes and type it in. "
+                "Different versions of the same package can give different answers, and only a person looking will notice.",
+     "expected": []},
+    {"num": 1, "folder": "01_target", "name": "Target estimand",
+     "desc": "Y(1)-Y(0), the population, and non-negative weights summing to one; decide population weighting and say why",
+     "summary": "Say exactly what you are trying to estimate: a treatment effect Y(1)-Y(0), for a named population, with weights that are non-negative and sum to one (ATT, ATE, LATE, and so on). "
+                "Decide whether to weight by population and say why. Choosing a target is a judgment about what the policymaker needs, so write down why this one and not the others.",
+     "expected": []},
+    {"num": 2, "folder": "02_bite", "name": "Bite",
+     "desc": "The treatment's first-order effects: where it created variation (maps + time series for regional panels)",
+     "summary": "Show that the treatment actually did something first-order: where it landed, when, and for how long. "
+                "This builds credibility and helps design the study. With regional panels, make maps and time-series plots.",
+     "expected": []},
+    {"num": 3, "folder": "03_covariates_balance", "name": "Covariates & balance",
+     "desc": "X chosen to remove bias (Y(0) trends for DiD); std. diff > 0.25 = imbalanced; pscore trimming, separation, ~10 treated per covariate",
+     "summary": "Pick covariates to remove bias, not to explain the outcome. For diff-in-diff that means covariates that drive trends in the untreated outcome and differ between treated and control. "
+                "Then check balance: a standardized difference above 0.25 is imbalanced; trim extreme propensity scores; watch for no overlap; keep about 10 treated units per covariate.",
+     "expected": []},
+    {"num": 4, "folder": "04_sample_shares", "name": "Sample shares",
+     "desc": "Treated units by group-time; cohort shares N_g/N_T drive the CS aggregation",
+     "summary": "Count the treated units in each cohort. Callaway-Sant'Anna weights cohorts by their share of treated units (N_g / N_T), "
+                "so one large cohort can dominate the overall estimate. Know the shares before you aggregate.",
+     "expected": []},
+    {"num": 5, "folder": "05_outcome_trends", "name": "Outcome trends by group",
+     "desc": "Pre-treatment only, don't peek (Rubin 2008); optional pre-period 2x2s",
+     "summary": "Plot the outcome over time for treated and comparison groups and ask whether they look comparable before treatment. "
+                "Do not look at post-treatment outcomes yet (Rubin 2008). Pre-period 2x2s give you the event-study leads without peeking.",
+     "expected": []},
+    {"num": 6, "folder": "06_power", "name": "Power calculation",
+     "desc": "Are we powered for this study? What's the MDE?",
+     "summary": "Before estimating, ask whether this design could detect an effect of a meaningful size. "
+                "Compute the minimum detectable effect, so a null result can be read honestly.",
+     "expected": []},
+    {"num": 7, "folder": "07_estimator_eventstudy", "name": "Estimator + event study",
+     "desc": "Estimator whose identifying assumptions are most realistic for the Step 1 estimand; name any new assumptions; event studies",
+     "summary": "Choose the estimator whose identifying assumptions are most believable in this data for the Step 1 target, and the one most robust to heterogeneous treatment effects. "
+                "If you move away from it, say what new assumptions you are taking on. Then run it and make the event studies.",
+     "expected": []},
+    {"num": 8, "folder": "08_falsification", "name": "Falsification & sensitivity",
+     "desc": "Popperian placebo outcomes; Rambachan-Roth credible parallel trends (M grid)",
+     "summary": "Try to break your own result. Test outcomes or groups that share the confounders but should show no effect, "
+                "and run Rambachan-Roth sensitivity analysis to see how large a violation of parallel trends it would take to overturn the finding.",
+     "expected": []},
+    {"num": 9, "folder": "09_rerun", "name": "Rerun",
+     "desc": "Version check first, then rerun if the estimator misbehaves",
+     "summary": "If the estimator misbehaves (missing standard errors, singular-matrix warnings), check the package version first, then the encodings, then rerun. "
+                "The usual culprit is the software, not the data.",
+     "expected": []},
 ]
+
+
+def _step_meta(num_str):
+    """CHECKLIST_STEPS entry for a stage-folder numeric prefix ('07' -> step 7), or None (e.g. 'S')."""
+    try:
+        n = int(num_str)
+    except (TypeError, ValueError):
+        return None
+    for st in CHECKLIST_STEPS:
+        if st["num"] == n:
+            return st
+    return None
+
+
+def render_step_guide():
+    """Plain-language 'what each step means' list, rendered under the checklist grid."""
+    rows = ""
+    for st in CHECKLIST_STEPS:
+        rows += (f'<div class="check-step"><div class="check-num pending">{st["num"]}</div>'
+                 f'<div class="check-content"><div class="check-name">{html_mod.escape(st["name"])} '
+                 f'<span style="font-weight:400;color:var(--muted);font-size:0.7rem;">· folder <code>{st["folder"]}</code></span></div>'
+                 f'<div class="check-desc" style="font-size:0.8rem;line-height:1.45;">{html_mod.escape(st["summary"])}</div></div></div>')
+    return ('<div class="checklist-section"><div class="checklist-section-hdr">What each step means</div>'
+            '<p class="checklist-help">The Cunningham Checklist in plain language. Step numbers match the stage folder numbers.</p>'
+            f'{rows}</div>')
 
 # =============================================================================
 # SCANNING FUNCTIONS
@@ -632,8 +700,8 @@ ANALYSIS_STEPS = [
     {"num": "3",  "label": "X+Balance", "title": "Covariate selection & balance (std. diff, trimming, separation, EPV)"},
     {"num": "4",  "label": "Share",     "title": "Sample shares (treated units by group-time, N_g/N_T)"},
     {"num": "5",  "label": "Outcome",   "title": "Outcome trends by group (pre-treatment, don't peek)"},
-    {"num": "6",  "label": "Estimator", "title": "Select estimator + event studies"},
-    {"num": "7",  "label": "Power",     "title": "Power calculation (are we powered? what's the MDE?)"},
+    {"num": "6",  "label": "Power",     "title": "Power calculation (are we powered? what's the MDE?)"},
+    {"num": "7",  "label": "Estimator", "title": "Select estimator + event studies"},
     {"num": "8",  "label": "Falsify",   "title": "Falsification & sensitivity (placebos, Rambachan-Roth)"},
     {"num": "9",  "label": "Rerun",     "title": "Rerun (version check first if the estimator misbehaves)"},
     {"num": "S",  "label": "Sign",      "title": "Sign-off (manifest.yaml)"},
@@ -899,7 +967,7 @@ def render_checklist_per_analysis():
     analyses = scan_analyses()
     if not analyses:
         # FELT BOARD: even with no analysis yet, render the beautiful grid as a
-        # pinned template row — all 12 step columns, empty cells.
+        # pinned template row — every step column (0-9 + Sign-off), empty cells.
         cols = "".join(f'<th title="{html_mod.escape(s["title"])}"><div class="step-num">{s["num"]}</div><div class="step-label">{s["label"]}</div></th>'
                        for s in ANALYSIS_STEPS)
         cells = "".join(f'<td class="cell-pending" title="Step {s["num"]} — {html_mod.escape(s["title"])}: not yet attempted">○</td>'
@@ -916,7 +984,7 @@ def render_checklist_per_analysis():
             </tr></tbody>
           </table>
         </div>'''
-        return f'<div class="checklist-tab">{grid_html}</div>'
+        return f'<div class="checklist-tab">{grid_html}{render_step_guide()}</div>'
 
     cols = "".join(f'<th title="{html_mod.escape(s["title"])}"><div class="step-num">{s["num"]}</div><div class="step-label">{s["label"]}</div></th>'
                    for s in ANALYSIS_STEPS)
@@ -964,7 +1032,7 @@ def render_checklist_per_analysis():
         </div>
     '''
 
-    return f'<div class="checklist-tab">{grid_html}{pkg_html}</div>'
+    return f'<div class="checklist-tab">{grid_html}{render_step_guide()}{pkg_html}</div>'
 
 
 def scan_stale_code():
@@ -2282,9 +2350,11 @@ def render_stages():
         # ---- the hallway: door grid ----
         doors = ""
         for room in rooms:
-            nm = room.name                       # e.g. 02_assignment
+            nm = room.name                       # e.g. 02_bite
             num = nm.split("_")[0]
-            title = nm.split("_", 1)[1].replace("_", " ").title() if "_" in nm else nm
+            _meta = _step_meta(num)
+            title = _meta["name"] if _meta else (nm.split("_", 1)[1].replace("_", " ").title() if "_" in nm else nm)
+            door_desc = _meta["desc"] if _meta else ""
             is_active = (nm == active)
             n_ideas = _count_bullets(room / "ideas.md")
             n_todo, _ = _count_boxes(room / "todo.md")
@@ -2303,6 +2373,7 @@ def render_stages():
                 f'background:var(--surface);padding:0.8rem 0.9rem;{glow}transition:.15s;">'
                 f'<div style="font-size:0.7rem;color:var(--muted);">stage {_h.escape(num)}</div>'
                 f'<div style="font-weight:700;font-size:0.95rem;margin:0.15rem 0 0.4rem;">{_h.escape(title)}</div>'
+                f'<div style="font-size:0.68rem;color:var(--muted);line-height:1.35;margin-bottom:0.4rem;">{_h.escape(door_desc)}</div>'
                 f'<div style="font-size:0.72rem;margin-bottom:0.35rem;">{badge}</div>'
                 f'<div style="display:flex;gap:0.5rem;font-size:0.7rem;">'
                 f'<span style="color:{C["ideas"]};">💜 {n_ideas}</span>'
@@ -2333,7 +2404,9 @@ def render_stages():
                 f'<button onclick="exitRoom()" style="margin-bottom:0.9rem;padding:0.4rem 0.9rem;'
                 f'border:1px solid var(--border);background:var(--surface);color:var(--text);'
                 f'border-radius:6px;cursor:pointer;font-size:0.8rem;">← back to hallway</button>'
-                f'<h3 style="margin-bottom:0.8rem;">Room {_h.escape(nm)}</h3>'
+                f'<h3 style="margin-bottom:0.4rem;">Room {_h.escape(nm)}</h3>'
+                f'<p style="font-size:0.85rem;line-height:1.5;color:var(--muted);margin-bottom:0.9rem;max-width:60rem;">'
+                f'{_h.escape((_step_meta(nm.split("_")[0]) or {}).get("summary", ""))}</p>'
                 f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">{panels}</div></div>')
 
     js = ('<script>'

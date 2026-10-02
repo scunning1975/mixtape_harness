@@ -52,10 +52,10 @@ Write the final list to `data/covariates_proposed.md` with columns:
 
 | # | Covariate | Why (Q-link or expert reasoning) | Source | Variable name in dataset |
 
-Then update the relevant DiD checklist (checklists/did_checklist.md, Step 2) with a backlink to data/covariates_proposed.md.
+Then update the relevant DiD checklist (checklists/did_checklist.md, Step 3) with a backlink to data/covariates_proposed.md.
 
 ## When to invoke
 
 - User runs `/covariates` directly.
-- User starts a DiD checklist (Step 2 of checklists/did_checklist.md).
+- User starts a DiD checklist (Step 3 of checklists/did_checklist.md).
 - User asks "what covariates should I use" or equivalent.

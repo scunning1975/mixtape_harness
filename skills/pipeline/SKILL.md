@@ -33,7 +33,7 @@ verdict:
 
 If `scripts/run_official_pipeline.py` does not exist in this project,
 STOP and say so. Offer to create one following the reference
-implementation (the AI-agents-and-minimum-wage project), but do not
+implementation in one of your existing projects, but do not
 improvise: the researcher decides what counts as official.
 
 ## Steps

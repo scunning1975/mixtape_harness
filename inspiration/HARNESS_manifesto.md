@@ -50,7 +50,7 @@ something real, shown *before* the outcome. In IV I say it as a commandment — 
 first stage separately and visually, even if you'll estimate with 2SLS.* In RDD it's the
 jump in treatment probability at the cutoff. In unconfoundedness it's the propensity score,
 "the observational analogue of complete randomization." In DiD it's the first-stage shock —
-the wage bite in Cengiz et al., the coverage ladder in Miller-Johnson-Wherry, the mental-
+the coverage ladder in Miller-Johnson-Wherry and the mental-
 health-care bite in Dias-Fontes. **Same object, four designs.** Bite sits on the design side
 of Rubin's line, by construction, and everything downstream depends on it.
 
@@ -154,8 +154,8 @@ The spine of every analysis is the five-stage blueprint — the same one I teach
 the bite** (the shock was real), **(2) falsification**, **(3) event study**, **(4) main
 results**, **(5) mechanisms.** Bite first, outcome last. Rubin, made operational.
 
-The `analyses/main/` folder ships a minimum-wage study as an *illustration* of what a walked
-checklist looks like — the shape of an analysis, not a runnable pipeline. Delete it and
+The running example in `CLAUDE.md` is the Brazil CAPS mental-health reform study (Dias & Fontes 2024), an *illustration* of what a walked
+checklist looks like — the shape of an analysis, not a runnable pipeline. Copy `analyses/_template/` or run
 `/newproject` when you start your own.
 
 **This is a prototype.** We'll be working through it to perfect it — the mechanisms are real

@@ -1,6 +1,6 @@
 # GTD — a zero-error harness for causal-inference research
 
-This repo is a **research harness**: a set of interlocking rules, checklists, skills, and a live
+This repo is a **research harness**: a set of interlocking rules, checklists, skills, hooks, and a live
 dashboard that keep an AI-assisted difference-in-differences project honest, reproducible, and
 resistant to drift. It is a *template* — clone it, point it at your own study, and it enforces a
 zero-error discipline as you work.
@@ -28,8 +28,9 @@ neither's memory can lie.
 |---|---|
 | `CLAUDE.md` | The harness law — read first. |
 | `checklists/` | The DiD / continuous-DiD / synth checklists every analysis walks. Templates; never edited. |
-| `analyses/` | One folder per analysis. `_template/` is copied per analysis; `main/` is an **illustrative example** (see its header — it is not a runnable pipeline). |
+| `analyses/` | One folder per analysis. `_template/` is the scaffold copied per analysis; its `stages/` are the checklist steps (`00_packages` … `09_rerun`). The Brazil CAPS study (Dias & Fontes 2024) is the teaching illustration — see *A note on the example* below. |
 | `skills/` | The instruments: `amnesia` (reorient), `newproject`, `covariates`, `pipeline`, `referee2` (audit), `blindspot` (perception audit), `drift-sweep`, `bibcheck`. |
+| `hooks/` | The guardrails that *enforce* the rules — Python scripts registered in `settings.json` (see `hooks/settings.snippet.json`): `protect-raw-data` (raw data is immutable), `no-fabricated-exhibit` (no figure/table from made-up data, unless a labeled Monte Carlo), `no-offbook-exhibit` (exhibits only from named scripts, never inline in a shell), `deck-from-pipeline` (deck only an exhibit a wired script rebuilds), `no-stale-canon` (warn when a canonized exhibit is missing, unwired, or stale). |
 | `dashboard_server.py` | The live dashboard — checklist grid, figures/tables, diffs, verification scale. |
 | `scripts/` | Harness helpers (manifest, ledger, sample-flow). Your analysis's build scripts are yours to add. |
 | `STATE.md` | The always-current "where am I" orientation file. Read on entry, updated continuously. |
@@ -53,9 +54,12 @@ point `ACTIVE_STAGE` at the next. Sign-off is just the final stage — locking i
 - Figures → `output/figures/` (PDF + PNG); tables → `output/tables/`.
 - Every number traces through code to real, unmodified data. No exhibit is fabricated; Monte Carlo is
   the one labeled carve-out. (See CLAUDE.md's provenance rule.)
+- These conventions are not just prose. The `hooks/` **enforce** them mechanically — a `PreToolUse`
+  hook blocks an edit to raw data or a fabricated-figure script *before* it runs, and a `PostToolUse`
+  hook flags a decked exhibit the pipeline cannot rebuild. Prose asks; a hook guarantees.
 
 ## A note on the example
 
-`analyses/main/` is filled in with a **minimum-wage** study as a *teaching illustration* of what a
-walked checklist looks like. It intentionally does **not** ship the data or build scripts — it shows the
-*shape* of an analysis, not a runnable pipeline. Delete it (or `/newproject`) when you start your own.
+The running example in `CLAUDE.md` is the Brazil **CAPS mental-health reform** study (Dias & Fontes 2024), used as a *teaching illustration* of what a
+walked checklist looks like. The repo does **not** ship the data or build scripts — it shows the
+*shape* of an analysis, not a runnable pipeline. Copy `analyses/_template/` (or run `/newproject`) when you start your own.

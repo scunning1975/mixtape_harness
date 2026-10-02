@@ -16,7 +16,7 @@ first stage (coverage takes off among exactly the targeted people) and a headlin
 **0.132 pp (≈9.4%) drop in annual mortality** that *grows over four years*, is
 concentrated in **disease-related (internal, health-care-amenable) deaths**, and
 implies roughly **19,200 lives saved over four years**. It is a near-textbook execution
-of all five elements — which is why it teaches so well next to CDLZ.
+of all five elements — which is why it teaches so well.
 
 ---
 
@@ -47,7 +47,7 @@ Three teaching points fall out of this:
 1. **Eligibility ≠ enrollment ≠ coverage.** The 50 pp eligibility jump is the *assignment*;
    12.8 pp is *take-up*; 4.4 pp is the *net* coverage change after crowd-out of private/other
    insurance. A weak first stage would blur these; MJW's is strong enough to show all three.
-2. **The bite is what makes the reduced form legible.** Like CDLZ, the mortality effect only
+2. **The bite is what makes the reduced form legible.** The mortality effect only
    means something *relative to how much coverage actually moved*. Scaling the 0.132 pp
    reduced form by the ~0.375 cumulative-years bite is what turns "a DiD coefficient" into
    "the effect of Medicaid on the people it reached."
@@ -112,8 +112,8 @@ of reading the *dynamics*, not just the pooled coefficient.
 ```
 
 The precision is good enough to *rule out* small effects (yr-3 CI excludes effects below
-0.045 pp), which is the mirror image of CDLZ ruling out elasticities below −0.45. Both papers
-win by making the null-or-signal *tight*, not merely significant.
+0.045 pp). The paper
+wins by making the null-or-signal *tight*, not merely significant.
 
 ---
 
@@ -132,39 +132,39 @@ Three converging pieces of evidence that it's **health care**, not something els
 
 ---
 
-## How the two papers nail BITE differently — the teaching pairing
+## How this paper nails BITE — the teaching point
 
 ```
-                    CENGIZ–DUBE–LINDNER–ZIPPERER      MILLER–JOHNSON–WHERRY
-                    (min wage → jobs)                 (Medicaid → mortality)
- ───────────────────────────────────────────────────────────────────────────
- What is the bite?  Δ WAGE of affected workers        Δ COVERAGE of affected
-                    = %Δw ≈ 6.8% (s.e. 1.0%)          = ladder: elig +50pp →
-                                                        enroll +12.8pp →
-                                                        uninsured −4.4pp
- Shape of it        one strong first stage,           a LADDER (assignment →
-                    engineered by looking only        take-up → net), engineered
-                    at low-wage jobs                   by sample selection
- Why it matters     denominator of the Wald-IV        scales reduced form into
-                    own-wage elasticity                per-newly-covered effect
- Falsification      upper-tail wage bins (placebo);   age 65+/high-income (no bite,
- tied to bite       Kaitz dose-response               no effect); external deaths
- Reduced form       null employment, TIGHT            −9.4% mortality, TIGHT
- Shape over time    immediate & durable               GROWS over 4 years
+                    MILLER–JOHNSON–WHERRY
+                    (Medicaid → mortality)
+ ─────────────────────────────────────────────────────
+ What is the bite?  Δ COVERAGE of affected
+                    = ladder: elig +50pp →
+                      enroll +12.8pp →
+                      uninsured −4.4pp
+ Shape of it        a LADDER (assignment →
+                    take-up → net), engineered
+                    by sample selection
+ Why it matters     scales reduced form into
+                    per-newly-covered effect
+ Falsification      age 65+/high-income (no bite,
+ tied to bite       no effect); external deaths
+ Reduced form       −9.4% mortality, TIGHT
+ Shape over time    GROWS over 4 years
 ```
 
-**The shared lesson for your students:** in both papers the bite is *engineered*, not
-found — CDLZ by restricting attention to low-wage jobs, MJW by selecting a low-income,
-near-elderly sample. A strong, visible first stage is what licenses everything downstream:
-it makes the falsifications sharp (turn the bite off, the effect vanishes), gives the
-event study something to plateau at, and converts the reduced form into a real
-treatment effect. **No bite, no interpretable DiD.** That's the whole first element,
-and both papers put it on the page before they show you a single main result.
+**The lesson for your students:** the bite is *engineered*, not found — here by selecting a
+low-income, near-elderly sample. A strong, visible first stage is what licenses everything
+downstream: it makes the falsifications sharp (turn the bite off, the effect vanishes), gives
+the event study something to plateau at, and converts the reduced form into a real treatment
+effect. **No bite, no interpretable DiD.** That's the whole first element, and the paper puts
+it on the page before it shows a single main result. Compare `REVIEW_Dias_Fontes.md`, where
+the bite is two-sided.
 
 ---
 
 ### Files produced by this read
-- `min wage_build/split_Miller_Johnson_Wherry_2021/summary_pp*.md` — 9 per-chunk summaries,
+- `papers_build/split_Miller_Johnson_Wherry_2021/summary_pp*.md` — 9 per-chunk summaries,
   each tagged with a **DiD ELEMENTS** section.
 - This review: `REVIEW_Miller_Johnson_Wherry.md`.
-- Companion: `REVIEW.md` (Cengiz et al.) and `Cengiz et al 2019_text.md`.
+- Companion: `REVIEW_Dias_Fontes.md`.

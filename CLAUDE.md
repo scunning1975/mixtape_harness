@@ -214,7 +214,7 @@ This project uses four interlocking artifacts to keep production and verificatio
 
 **cards/** — modular narrative claims. Front of card = one-sentence claim. Back = evidence (bullets linking to figures, tables, scripts) plus a short exposition paragraph. Cards are reorderable — drag them around in cards/INDEX.md until the narrative arc makes sense, then collapse into narrative.md.
 
-**checklists/did_checklist.md** — the 10-step DiD workflow template. Every DiD analysis runs steps 1–9 top to bottom: target parameter → covariates (via /covariates skill) → balance → treatment visualization → outcome over time → sample sizes → estimator (CS-DiD preferred) → event study → Rambachan-Roth sensitivity. Step 10 (estimator-misbehaves debugging) — version check first, data-doubt later. Sign-off requires step-to-step reconciliation.
+**checklists/did_checklist.md** — the DiD workflow template, following the Cunningham Checklist (`checklists/Checklist.docx`). Every DiD analysis runs Step 0 (package preflight) and then Steps 1–8 top to bottom: target estimand → bite → covariate selection and balance (via /covariates skill) → sample shares → outcome trends by group → power calculation → estimator and event study (CS-DiD preferred) → falsification and Rambachan-Roth sensitivity. Step 9 (rerun, when the estimator misbehaves) — version check first, data-doubt later. Stage folders under `analyses/<slug>/stages/` carry the same numbers (`01_target` … `09_rerun`). Sign-off requires step-to-step reconciliation.
 
 **analyses/<slug>/checklist.md** — the per-analysis instance of the checklist. Every distinct DiD analysis gets its own folder under `analyses/` with a checklist.md instantiated from the template. The dashboard reads these instances; the global template is never edited. The slug is whatever names the analysis — there is no fixed taxonomy.
 
@@ -228,11 +228,11 @@ When the user requests any DiD estimation (att_gt, did2s, fect, synthdid, twfe w
 
 3. **Walk steps 1–6 in order.** Each step has a deliverable (figure, table, decision). Write the deliverable's filesystem path into the checklist as you complete the step. Do NOT skip ahead. Do NOT call the estimator before step 6 is signed off. If a step is genuinely N/A, write "N/A — <one-sentence reason>" in the checklist; the dashboard treats N/A and complete equivalently.
 
-4. **Step 7 is the gate.** Before invoking the estimator, run Step 10's preflight: confirm the estimation package version (whatever package — `did`, `DRDID`, `fixest`, `synthdid`, etc.) meets the `# REQUIRES:` declared at the top of the estimation script. If installed < required, STOP and ask the user before proceeding. Do not silently install or upgrade.
+4. **Step 7 is the gate.** Before invoking the estimator, run Step 7b's preflight: confirm the estimation package version (whatever package — `did`, `DRDID`, `fixest`, `synthdid`, etc.) meets the `# REQUIRES:` declared at the top of the estimation script. If installed < required, STOP and ask the user before proceeding. Do not silently install or upgrade.
 
-5. **Steps 8–9 follow estimation.** Event study figure and results table land at the paths declared in the checklist. Sensitivity bounds (HonestDiD or equivalent) before sign-off.
+5. **The event study (Step 7c) and Step 8 follow estimation.** Event study figure and results table land at the paths declared in the checklist. Falsification and sensitivity bounds (HonestDiD or equivalent) before sign-off.
 
-6. **Sign off in the checklist.** Update frontmatter `status: complete` only when all 9 steps have deliverables and step 6 N's reconcile with step 4's map.
+6. **Sign off in the checklist.** Update frontmatter `status: complete` only when Steps 1–8 have deliverables and Step 4 N's reconcile with Step 2's map.
 
 You may NOT shortcut this for "quick" or "exploratory" runs. An exploratory run still gets a slug (e.g., date-stamped) and instantiates a checklist — the deliverables can be looser, but the trace is mandatory. No DiD output exists in this project without a documented derivation. The dashboard will show un-instantiated estimation as red. If the user pushes back ("just run the regression, I don't need a checklist"), respond with "the project's CLAUDE.md requires the harness; want me to instantiate a date-stamped exploratory slug?" — do not bypass.
 
@@ -244,7 +244,13 @@ The flow: scratch idea → /covariates if it's DiD → instantiate `analyses/<sl
 
 ## Running example used throughout this harness
 
-The running example used in this harness is the effect of **state minimum-wage increases on low-wage employment**, Card-Krueger style, staggered cohorts at the county level. Treatment is the date a state's minimum wage rises above the federal floor; the outcome is employment in low-wage sectors (food service, retail, accommodation) measured per 1,000 working-age population. Treated counties are the ~120 in early-adopter states (e.g., 2014, 2015, 2016 cohorts). Controls are the ~3,000 never-treated counties in states whose minimum wage tracked the federal floor through the analysis window.
+The running example used in this harness is **Dias & Fontes (2024), "The Effects of a Large-Scale Mental Health Reform: Evidence from Brazil."** Brazil's 2002 psychiatric reform rolled out **CAPS** (community mental-health centers) municipality by municipality. Staggered cohorts at the municipality-year level, 2002–2016: 5,476 municipalities, 1,640 ever-treated (cohorts 2002–2016; 296 already treated in 2002, the first panel year), 3,836 never-treated. Treatment is the first year a municipality has a CAPS (`caps`). The headline outcome is homicides per 10,000 people (`sim_agressao`); deaths of despair (`sim_diseases_despair`, `sim_suicide`, `sim_overdose`) are the null outcomes. The authors' replication file is `brazil.dta` (82,140 municipality-years, 117 variables); when you instantiate the example, put it at `analyses/brazil_caps/data/raw/brazil.dta`.
+
+**The bite (Step 2) is two-sided — care moves from the institution to the community:**
+- Care goes **up**: outpatient mental-health procedures per 10k (`pa_mh`), mental-health providers per 10k (`pf_mh`), psychiatrists (`pf_psiqui_total`).
+- Institutional care goes **down**: psychiatric admissions per 10k (`sih_tnet_F`), long-stay admissions (`sih_tnet_F_1`), schizophrenia admissions (`sih_tnet_F_esquizofrenia`), federal MH-hospital spending (`lnvalortotal`).
+- Do **not** use psychiatric beds (`leito_exist_all`) as bite: beds were already falling since the 1980s, independent of CAPS.
+- The admissions drop, not the outpatient rise, is the channel for homicides (Penrose's hypothesis). Reduced form ÷ first stage (Δhomicides / Δadmissions) is the dose-response. See `inspiration/REVIEW_Dias_Fontes.md`.
 
 This is a placeholder running example — the harness is domain-neutral and works for any DiD design where the missing counterfactual is Y(0). Swap the example for your own when you instantiate this template in a new project.
 
@@ -256,7 +262,7 @@ Five stages of any quasi-experimental study: (1) Show Bite (the shock was real �
 
 ```
 scripts/python/00_clean_source.py     # Raw → clean, typed, parsed dates
-scripts/python/01_build_outcome.py    # Outcome panel (county-month)
+scripts/python/01_build_outcome.py    # Outcome panel (municipality-year)
 scripts/python/02_build_panel.py      # Merge outcome + treatment + covariates
 scripts/python/03_descriptive.py      # Stage 1: show bite figures and maps
 scripts/r/10_estimate.R               # Stages 3-4: event study, main results
@@ -374,10 +380,10 @@ of *showing* it, so the audience can recite the definition but can't picture the
 
 ## Open Design Questions (template)
 
-Every project will have its own list. For the running min-wage example, the recurring open questions are:
+Every project will have its own list. For the running Brazil CAPS example, the recurring open questions are:
 
-1. **Treatment definition:** the day the law takes effect, the day it was signed, or the first month employment outcomes are observed under the new floor?
-2. **Pre-trend window:** how many years of pre-period to include? Longer windows pick up more secular trend; shorter windows are more comparable.
-3. **Geographic level:** county is the natural unit; CBSA collapses cross-state borders; state is too coarse for staggered design.
-4. **Falsification period:** a clean year before any state moved should yield a zero placebo. Pick the period that is closest to the treated window without overlap.
-5. **Measurement of low-wage sectors:** QCEW industry-level employment at NAICS 72 (food/accommodation) is the canonical proxy; NAICS 44–45 (retail) and CPS-derived hourly-wage thresholds are the robustness alternatives.
+1. **Treatment definition:** first CAPS of any type (`caps`), or by type (CAPS I/II/III/AD/INF), or the count (`numcaps`) as a continuous dose?
+2. **Already-treated units:** 296 municipalities have CAPS in 2002, the first panel year — no pre-period. Drop them, or treat them as a separate group?
+3. **Comparison group:** never-treated (3,836) or not-yet-treated? Is CAPS eligibility (population thresholds) making never-treated municipalities systematically smaller?
+4. **Which bite:** admissions down (the mechanism) versus outpatient care up (the most visible). They answer different questions.
+5. **Outcome scale:** homicides per 10k in levels, or logs? Small municipalities have many zeros.
