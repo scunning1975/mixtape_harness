@@ -20,7 +20,7 @@ support it. *Then* analyze. Rubin's line is the whole creed:
 > study design." — Rubin (2008), *Design Trumps Analysis*
 
 In other words, we should design our studies *without peeking at the outcomes*, exactly the way
-they do in a randomized controlled trial.
+they do in a randomized controlled trial (RCT).
 
 I've spent years trying to spell this out concretely, as practical guides in *Causal
 Inference: The Mixtape* — one per research design. They look like four different checklists,
