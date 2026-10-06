@@ -1,5 +1,7 @@
 # GTD — a zero-error harness for causal-inference research
 
+![The live GTD dashboard](dashboard_image.png)
+
 This repo is a **research harness**: a set of interlocking rules, checklists, skills, hooks, and a live
 dashboard that keep an AI-assisted difference-in-differences project honest, reproducible, and
 resistant to drift. It is a *template* — clone it, point it at your own study, and it enforces a
