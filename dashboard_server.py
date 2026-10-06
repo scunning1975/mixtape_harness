@@ -32,6 +32,9 @@ PIPELINE_SCRIPTS = [
     {"script": "scripts/python/01_build_outcome.py", "outputs": ["data/clean/outcome_county_month.csv"], "level": 1, "name": "Build outcome panel"},
     {"script": "scripts/python/02_build_covariates.py", "outputs": ["data/derived/county_covariates_static.csv"], "level": 2, "name": "Covariates"},
     {"script": "scripts/python/03_descriptive.py", "outputs": ["output/figures/treatment_timeline.png", "output/figures/sample_map.png"], "level": 4, "name": "Stage 1 descriptive (bite)"},
+    {"script": "scripts/r/00_bite_inspect.R", "outputs": ["data/clean/brazil_bite_panel.rds"], "level": 4, "name": "Bite: load & inspect brazil.dta"},
+    {"script": "scripts/r/01_bite_national_trends.R", "outputs": ["output/figures/brazil_caps_bite.png"], "level": 4, "name": "Bite: national admission trends"},
+    {"script": "scripts/r/02_bite_maps.R", "outputs": ["output/figures/brazil_caps_firstdiff_schiz.png", "output/figures/brazil_caps_firstdiff_allmh.png"], "level": 4, "name": "Bite: first-difference state maps"},
     {"script": "scripts/r/30_build_gvar.R", "outputs": ["data/derived/gvar_county.csv"], "level": 5, "name": "Build cohort gvar"},
     {"script": "scripts/r/30b_build_panel_clean.R", "outputs": ["data/derived/panel_clean.csv"], "level": 5, "name": "Build clean panel (main)"},
     {"script": "scripts/r/30c_build_panel_falsif.R", "outputs": ["data/derived/panel_falsif.csv"], "level": 5, "name": "Build falsification panel"},
@@ -43,6 +46,10 @@ FIGURE_SCRIPT_MAP = {
     # Stage 1 descriptive (bite) -- scripts/python/03_descriptive.py
     "treatment_timeline":            "scripts/python/03_descriptive.py",
     "sample_map":                    "scripts/python/03_descriptive.py",
+    # bite stage (brazil_caps) -- national admission trends + first-difference state maps
+    "brazil_caps_bite":              "scripts/r/01_bite_national_trends.R",
+    "brazil_caps_firstdiff_schiz":   "scripts/r/02_bite_maps.R",
+    "brazil_caps_firstdiff_allmh":   "scripts/r/02_bite_maps.R",
     # causal layer (staggered Callaway-Sant'Anna)
     "csdid_event_study_main":        "scripts/r/31_csdid_main.R",
     "csdid_event_study_falsif":      "scripts/r/32_csdid_falsif.R",
@@ -1779,7 +1786,7 @@ def render_figures(figures, insights=None):
         <div class="fig-flip-container" id="fig-{f['name']}" style="max-width:620px;margin-bottom:1.5rem;" onclick="this.classList.toggle('flipped')">
           <div class="fig-flip-inner">
             <div class="fig-front fig-card {border}">
-              <img src="/{f['path']}" loading="lazy" data-cycle-src="/{f['path']}" data-cycle-name="{f['name']}" data-cycle-kind="figure" data-cycle-group="figures-tab" ondblclick="event.stopPropagation();showLightboxFromGroup(this, '[data-cycle-group=&quot;figures-tab&quot;]')">
+              <img src="/{f['path']}" loading="lazy" style="cursor:zoom-in" data-cycle-src="/{f['path']}" data-cycle-name="{f['name']}" data-cycle-kind="figure" data-cycle-group="figures-tab" onclick="event.stopPropagation();showLightboxFromGroup(this, '[data-cycle-group=&quot;figures-tab&quot;]')">
               <div class="fig-name">{f['name']} <span class="tier-dot tier-{tier}"></span>{'<span class="fig-no-desc">?</span>' if not caption else ''}<span class="fig-expand" data-cycle-src="/{f['path']}" data-cycle-name="{f['name']}" data-cycle-kind="figure" data-cycle-group="figures-tab" onclick="event.stopPropagation();showLightboxFromGroup(this, '[data-cycle-group=&quot;figures-tab&quot;].fig-expand')">&#x26F6;</span></div>
               <div class="fig-meta">{f['mtime']} &middot; {script_display}</div>
             </div>
@@ -2661,6 +2668,16 @@ td { padding:0.5rem; border-bottom:1px solid var(--border); }
 #code-body { font-family:'SF Mono','Fira Code',monospace; font-size:0.72rem; line-height:1.8; white-space:pre; }
 .code-line { display:inline; }
 .line-num { display:inline-block; width:3.5em; text-align:right; margin-right:1em; color:var(--border); user-select:none; }
+/* syntax highlighting — cool palette (Scott: "cool colors on fonts of the code") */
+.tok-cmt { color:#6b9e95; font-style:italic; }
+.tok-str { color:#58b2e8; }
+.tok-num { color:#4fc7cf; }
+.tok-kw  { color:#9d8cf0; font-weight:600; }
+/* lightbox entrance spin */
+@keyframes lbSpinIn { from { transform:rotateY(-360deg); opacity:0.25; } to { transform:rotateY(0deg); opacity:1; } }
+.lb-spin-in { animation:lbSpinIn 0.55s cubic-bezier(.2,.7,.2,1); }
+.lb-content:fullscreen { display:flex; align-items:center; justify-content:center; background:var(--bg,#111); }
+.lb-content:fullscreen .lb-img { max-height:92vh; max-width:92vw; }
 .insight-date { font-size:0.7rem; color:var(--muted); } .finding { font-size:0.8rem; color:var(--muted); margin-top:0.4rem; }
 .date { font-size:0.7rem; color:var(--muted); }
 .empty { color:var(--muted); font-style:italic; }
@@ -3116,6 +3133,17 @@ if (document.readyState === 'loading') {
 } else {
   _initRituals();
 }
+function hlCode(l) {
+  // l is already HTML-escaped (< -> &lt;). Color strings, comments, numbers, keywords.
+  return l.replace(/("[^"]*"|'[^']*')|(#.*)|([0-9]+[.]?[0-9]*)|(\\b(?:function|if|else|for|while|repeat|return|in|next|break|TRUE|FALSE|NULL|NA|Inf|library|require|source|suppressPackageStartupMessages|stopifnot|import|from|def|class|lambda|print|cat)\\b)/g,
+    function(m, str, cmt, num, kw) {
+      if (str) return '<span class="tok-str">'+str+'</span>';
+      if (cmt) return '<span class="tok-cmt">'+cmt+'</span>';
+      if (num) return '<span class="tok-num">'+num+'</span>';
+      if (kw)  return '<span class="tok-kw">'+kw+'</span>';
+      return m;
+    });
+}
 async function loadCode(path, line) {
   document.getElementById('code-path').textContent = path + (line ? ' (line '+line+')' : '');
   try {
@@ -3127,7 +3155,7 @@ async function loadCode(path, line) {
     const html = lines.map((l, i) => {
       const num = i + 1;
       const highlight = (line && num === parseInt(line)) ? ' style="background:rgba(139,92,246,0.15);display:block;"' : '';
-      return '<span class="code-line"' + highlight + ' id="codeline-'+num+'"><span class="line-num">'+(num)+'</span>'+l.replace(/</g,'&lt;')+'</span>';
+      return '<span class="code-line"' + highlight + ' id="codeline-'+num+'"><span class="line-num">'+(num)+'</span>'+hlCode(l.replace(/</g,'&lt;'))+'</span>';
     }).join('\\n');
     document.getElementById('code-body').innerHTML = html;
     show('code');
@@ -3276,7 +3304,7 @@ function showLightbox(src, title, hasCycle, kind) {
       <div class="lb-content">
         <div class="lb-flip-container">
           <div class="lb-flip-inner">
-            <div class="lb-front"><img class="lb-img"><div class="lb-title"></div><div class="lb-hint">click card to flip · ← → to cycle (courtroom)</div></div>
+            <div class="lb-front"><img class="lb-img"><div class="lb-title"></div><div class="lb-hint">click to spin · <b>F</b> fullscreen · <b>&larr; &rarr;</b> cycle · <b>Esc</b> close</div></div>
             <div class="lb-back"><div class="lb-back-title"></div><div class="lb-back-body"></div></div>
           </div>
         </div>
@@ -3289,7 +3317,17 @@ function showLightbox(src, title, hasCycle, kind) {
     };
     document.addEventListener('keydown', (e) => {
       if (lb.style.display !== 'flex') return;
-      if (e.key === 'Escape') { lb.style.display='none'; lb.querySelector('.lb-flip-container').classList.remove('flipped'); window._lbCycle = null; return; }
+      if (e.key === 'Escape') {
+        if (document.fullscreenElement) { document.exitFullscreen(); return; }
+        lb.style.display='none'; lb.querySelector('.lb-flip-container').classList.remove('flipped'); window._lbCycle = null; return;
+      }
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        const c = lb.querySelector('.lb-content');
+        if (document.fullscreenElement) { document.exitFullscreen(); }
+        else if (c.requestFullscreen) { c.requestFullscreen(); }
+        return;
+      }
       if (window._lbCycle) {
         if (e.key === 'ArrowLeft')  { e.preventDefault(); _lbCycleStep(-1); }
         if (e.key === 'ArrowRight') { e.preventDefault(); _lbCycleStep(1); }
@@ -3313,6 +3351,9 @@ function showLightbox(src, title, hasCycle, kind) {
   }
   lb.querySelector('.lb-back-body').innerHTML = backHtml;
   lb.style.display = 'flex';
+  // entrance spin: one 360° rotate on open ("animates and spins around")
+  const fc = lb.querySelector('.lb-flip-container');
+  fc.classList.remove('lb-spin-in'); void fc.offsetWidth; fc.classList.add('lb-spin-in');
 }
 
 // ---- Pin a figure to a checklist stage (Scott, 2026-07-28) ----
@@ -4585,7 +4626,7 @@ def build_page(hypotheses, insights, decisions, pipeline, figures, code_files, d
     <div class="view" id="v-narrative"><h2>Template</h2>{reorient_html}<p style="color:var(--muted);font-size:0.78rem;margin-bottom:1rem;">The research-appendix genre — the standing pattern the write-up follows. The empty form; no project findings.</p>{render_narrative(hypotheses, insights)}</div>
     <div class="view" id="v-checklist_per_analysis"><h2>Checklist</h2><p style="color:var(--muted);font-size:0.78rem;margin-bottom:1rem;">The methodological gate upstream of everything. <strong>Click an analysis row</strong> to open its stages and their exhibits in place — each figure/table flips from the exhibit to its description to the scrollable source code that made it (Esc backs out). Per-analysis grid + Step 0 package cards below. Every DiD analysis instantiates <code>analyses/&lt;slug&gt;/checklist.md</code> from the template — the AI invokes <code>/checklist</code> to walk Steps 0–9.</p>{render_checklist_per_analysis()}</div>
     <div class="view" id="v-diffs"><h2>Diffs</h2><p style="color:var(--muted);font-size:0.78rem;margin-bottom:1rem;">Local git history for this project — the <strong>bounded diff as the unit of verification</strong>. Click a commit card and it floats open into a full-screen view — the front shows only what changed (green added / red removed); hit "Show full context" to expand, or flip the card for authored/committed dates and the review sign-off. Use ← → to walk commits. Mark a commit reviewed once you agree with it — that pays down verification debt and the scale settles live. Read-only on git: the dashboard runs <code>git log</code>/<code>git show</code> only, never commits or pushes.</p>{render_diffs()}</div>
-    <div class="view" id="v-figures"><h2>Figures</h2><div style="{_ph}">Flip-card gallery of pipeline-produced figures. Each card shows the figure with its source script and a status badge; click a card to flip it for full provenance (script path, line number, approval state). This tab is populated automatically once the analysis pipeline emits figures to <code>output/figures/</code>. It is empty until then — nothing appears here that the runner did not produce.</div></div>
+    <div class="view" id="v-figures"><h2>Figures</h2><p style="color:var(--muted);font-size:0.78rem;margin-bottom:1rem;">Flip-card gallery of figures in <code>output/figures/</code>. Click a figure to open it full-size — it spins in, <strong>F</strong> goes true fullscreen, <strong>&larr; &rarr;</strong> cycle between figures, <strong>Esc</strong> returns.</p>{render_figures(figures, insights) if figures else f'<div style="{_ph}">Empty until the pipeline emits figures to <code>output/figures/</code> — nothing appears here that a script did not produce.</div>'}</div>
     <div class="view" id="v-tables"><h2>Tables</h2><div style="{_ph}">Flip-card gallery of pipeline-produced tables. Each card shows a table with the source script that generated it and a status badge; click to flip for provenance and approval state. This tab is populated automatically once the analysis pipeline emits tables to <code>output/tables/</code>. It is empty until then — every table shown traces back to a wired script.</div></div>
     <div class="view" id="v-decisions"><h2>Decisions</h2><div style="{_ph}">Audit trail of binding design decisions. Each entry records the choice that was made, the alternatives that were considered, and the rationale for the pick — so every downstream number can be traced back to a logged decision. Once a decision is committed here, every script downstream must respect it. Empty until the first decision is logged.</div></div>
     <div class="view" id="v-code"><h2>Code</h2><p style="color:var(--muted);font-size:0.78rem;margin-bottom:1rem;">The workshop. Pipeline = verified and approved. For Review = needs verification. Sandbox = experimental.</p>{render_code_unified(pipeline, code_files)}</div>

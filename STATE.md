@@ -1,46 +1,67 @@
-# STATE — project working memory
+# STATE: project working memory
 
-**Last updated:** (fresh template — set this to today when you start)
+**Last updated:** 2026-10-02 — *(full session logs in `audits/` when written)*
 
----
+## CURRENT OBJECTIVE (2026-10-02)
 
-> **What this file is.** STATE.md is *orientation, not documentation* — the always-current "where am I
-> right now" file. The AI reads it on entry and summarizes back where things stand; you update it after
-> every completed step (not batched at the end). It is authoritative over anyone's memory: if recollection
-> and this file disagree, the file wins. Keep it short — under a minute to read. This is a blank template;
-> replace each section below with your project's real state as you work. (See `/amnesia` and `/sleep`.)
+Bite stage of `analyses/brazil_caps` (ACTIVE_STAGE = 02_bite): make a beautiful national-trend
+figure of CAPS's effect on psychiatric admissions (`sih_tnet_F`) and schizophrenia admissions
+(`sih_tnet_F_esquizofrenia`) over 2002–2016, then pipe it into the dashboard (Evidence→Figures,
+Machinery→Code). Estimation is NOT yet in scope — these are descriptive bite figures.
 
-## Current objective
+## STATE OF MIND (2026-10-02)
 
-*(One sentence: the single thing being worked on right now.)*
-— e.g. "Get the staggered CS-DiD estimate to a clean falsification sign-off."
+Momentum session, Scott firing rapid context. Keeper-of-rules duty is live: Step 0 (package
+preflight) and Step 1 (target estimand) are still OPEN — they gate the estimator, not these
+figures, but must not be skipped before any att_gt call. Hard honesty line held: brazil.dta is
+not on the machine, so no figure yet — never fabricate the data.
 
-## Just completed
+## Just completed (2026-10-02) — FIRST-DIFFERENCE STATE MAPS
 
-*(The last 2–3 steps finished, most recent first — so a cold reader sees the trajectory.)*
+- Built two choropleths (`scripts/r/02_bite_maps.R`): within-municipality first difference
+  (mean post-g minus g−1 baseline, pop-weighted to state) for schizophrenia and all-MH admissions.
+  Most states fell; RS/RR rose. Figures + script registered in FIGURE_SCRIPT_MAP + PIPELINE_SCRIPTS.
+- KEY LIMITATION recorded: teaching brazil.dta has no municipality map key (cod is anonymized
+  1..5476), so municipality-level choropleth is impossible → mapped at state level via `uf`.
+  Upgrade needs the geocoded replication file (IBGE codes).
+- geobr install was broken (duckdb dep timed out); used a states GeoJSON via sf instead
+  (cached at data/derived/br_states.geojson).
 
-## In progress
+## Earlier 2026-10-02 — BITE FIGURE BUILT + DASHBOARD WIRED
 
-*(What is mid-flight this moment, including any half-done edit or unresolved decision.)*
+- Intaked real `brazil.dta` (82,140 × 117) → sealed `data/raw/`; inspected (vars are already per-10k rates).
+- Built `output/figures/brazil_caps_bite.png` via `scripts/r/01_bite_national_trends.R`:
+  population-weighted national trend of psych + schizophrenia admissions, 2002–2016 (both fall).
+- Wired dashboard (`dashboard_server.py`): Figures tab now renders the gallery (was a placeholder);
+  lightbox gets click-to-spin + F-fullscreen (added) alongside existing ←→/Esc; code viewer gets
+  cool-color syntax highlighting (`hlCode`). Figure registered in FIGURE_SCRIPT_MAP.
+- Scaffolded dirs + instantiated `analyses/brazil_caps/` (ACTIVE_STAGE = 02_bite); wrote theme + inspector.
+- Recorded canister `findings.md` + `exhibits.md` for 02_bite.
 
-## Next
+## IN PROGRESS
 
-*(The immediate next 1–3 steps.)*
+- Bite figure DONE and live on the dashboard. Next natural step is the rollout/bite-vs-control
+  view or moving toward Steps 0–1 before the estimator. Nothing half-done.
 
-## Canonical files
+## NEXT SESSION — START HERE
 
-*(The files that matter and what each is for; flag anything redundant, orphaned, or superseded.)*
+1. Intake `brazil.dta` → `data/raw/` once Scott gives the path.
+2. Run `scripts/r/00_bite_inspect.R`, LOOK at real columns; decide national quantity
+   (population-weighted rate per 10k vs mean municipal rate — they differ; record the choice).
+3. Write `scripts/r/01_bite_national_trends.R` → `output/figures/brazil_caps_bite.png` (+ PDF).
+4. Pipe figure into dashboard (Evidence→Figures: click-to-spin, F fullscreen, ←/→ nav, Esc back)
+   and code into Machinery→Code (scrollable, syntax-colored, show directory). Code review LATER.
 
-- `CLAUDE.md` — the harness law (zero-error constraint, stage-lock model, provenance, DiD harness).
-- `checklists/` — the DiD / continuous-DiD / synth checklist templates every analysis walks.
-- `analyses/<slug>/` — your analysis folders (copy `_template/`; `main/` is an illustrative example).
-- `dashboard_server.py` — the live dashboard at localhost:8080 (restart to pick up code edits).
+## OPEN QUESTIONS / BLOCKERS
 
-## Open questions / blockers
+- (2026-10-02) **Where is `brazil.dta`?** Awaiting path — hard blocker; no figure until intaked.
+- (2026-10-02) National quantity choice (pop-weighted vs mean municipal rate) — decide after inspection.
+- (2026-10-02) Estimator CS-DiD is a candidate; confirm after Step 3 overlap/covariates.
 
-*(Anything unresolved that would block a later step.)*
+## CANONICAL FILES
 
----
-
-*This file is orientation, not documentation. Read on entry; update per step. `audits/` is history; the
-per-analysis checklists are procedure; this is where-am-I-right-now.*
+- `CLAUDE.md` — harness law. `MANIFESTO.md` — design-without-peeking principle.
+- `analyses/brazil_caps/checklist.md` — DiD procedure (Step 0 pkg preflight + Step 1 target still OPEN/red).
+- `scripts/r/_theme_bite.R`, `scripts/r/00_bite_inspect.R` — bite-stage code so far.
+- `inspiration/REVIEW_Dias_Fontes.md` + `papers_build/split_dias.../summary_pp*.md` — paper notes.
+- `dashboard_server.py` — live dashboard (localhost:8080); figure/code wiring pending.
