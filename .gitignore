@@ -16,3 +16,6 @@ Rplots.pdf
 analyses/*
 !analyses/_template/
 !analyses/_template/**
+
+# Word lock files
+~$*
